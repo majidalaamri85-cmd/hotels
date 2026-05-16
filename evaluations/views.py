@@ -107,10 +107,21 @@ def evaluation_create(request):
     """Create a new evaluation with optimized query."""
     form = EvaluationForm(request.POST or None)
     team_members = request.POST.getlist('visiting_team_members[]') if request.method == 'POST' else ['']
-    sections = Section.objects.order_by('order').prefetch_related(
+    active_criteria_count = Criterion.objects.filter(active=True).count()
+    sections = Section.objects.filter(
+        subsections__criteria__active=True
+    ).annotate(
+        criteria_count=Count(
+            'subsections__criteria',
+            filter=Q(subsections__criteria__active=True),
+            distinct=True,
+        )
+    ).distinct().order_by('order').prefetch_related(
         Prefetch(
             'subsections',
-            queryset=SubSection.objects.order_by('order').prefetch_related(
+            queryset=SubSection.objects.filter(
+                criteria__active=True
+            ).distinct().order_by('order').prefetch_related(
                 Prefetch(
                     'criteria',
                     queryset=Criterion.objects.filter(active=True).order_by('order', 'id')
@@ -153,7 +164,8 @@ def evaluation_create(request):
         'form_kind': 'evaluation',
         'team_members': team_members if team_members else [''],
         'sections': sections,
-        'has_active_criteria': Criterion.objects.filter(active=True).exists(),
+        'active_criteria_count': active_criteria_count,
+        'has_active_criteria': active_criteria_count > 0,
     })
 
 

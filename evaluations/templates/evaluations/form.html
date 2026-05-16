@@ -63,6 +63,7 @@
 						<p class="section-kicker mb-1">الأقسام والبنود</p>
 						<h3 class="panel-title mb-0">اختر القسم لعرض البنود</h3>
 					</div>
+					<span class="criteria-total">{{ active_criteria_count }} بند</span>
 				</div>
 
 				{% if has_active_criteria %}
@@ -73,6 +74,7 @@
 									<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#preview-s{{ s.id }}" aria-expanded="false" aria-controls="preview-s{{ s.id }}">
 										<span class="accordion-code">{{ s.code }}</span>
 										<span>{{ s.title }}</span>
+										<span class="criteria-count">{{ s.criteria_count }} بند</span>
 									</button>
 								</h2>
 								<div id="preview-s{{ s.id }}" class="accordion-collapse collapse" data-bs-parent="#criteriaPreviewAcc">
