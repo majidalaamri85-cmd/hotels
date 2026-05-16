@@ -6,17 +6,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-secret-key-change')
 DEBUG = os.environ.get('DEBUG', 'True').lower() == 'true'
 
-default_hosts = ['127.0.0.1', 'localhost']
-env_hosts = [h.strip() for h in os.environ.get('ALLOWED_HOSTS', '').split(',') if h.strip()]
-render_hostname = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
-if render_hostname:
-    env_hosts.append(render_hostname)
-ALLOWED_HOSTS = env_hosts or default_hosts
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '.onrender.com').split(',')
 
-csrf_origins = [o.strip() for o in os.environ.get('CSRF_TRUSTED_ORIGINS', '').split(',') if o.strip()]
-if render_hostname:
-    csrf_origins.append(f"https://{render_hostname}")
-CSRF_TRUSTED_ORIGINS = csrf_origins
+CSRF_TRUSTED_ORIGINS = os.environ.get('CSRF_TRUSTED_ORIGINS', 'https://*.onrender.com').split(',')
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -173,6 +165,13 @@ LOGGING = {
     },
     'root': {
         'handlers': ['console'],
-        'level': 'INFO',
+        'level': 'INFO' if DEBUG else 'WARNING',
     },
-} if DEBUG else {}
+    'loggers': {
+        'django.request': {
+            'handlers': ['console'],
+            'level': 'ERROR',
+            'propagate': True,
+        },
+    },
+}
