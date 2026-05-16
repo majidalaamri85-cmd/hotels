@@ -92,7 +92,7 @@ class Evaluation(models.Model):
     STATUS = [('DRAFT', 'مسودة'), ('FINAL', 'معتمد')]
 
     hotel = models.ForeignKey(Hotel, on_delete=models.CASCADE, related_name='evaluations', verbose_name='الفندق')
-    evaluator = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, verbose_name='المقيّم')
+    evaluator = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, verbose_name='المقيم')
     visit_date = models.DateField(verbose_name='تاريخ الزيارة')
     visiting_team = models.CharField(max_length=255, blank=True, verbose_name='الفريق الزائر')
     additional_person = models.CharField(max_length=255, blank=True, verbose_name='شخص آخر')
@@ -118,7 +118,7 @@ class Evaluation(models.Model):
         self.recommendation = (
             'مستوفي' if self.score >= 90 else
             'اعتماد مشروط/إعادة زيارة' if self.score >= 70 else
-            'غير مستوفي حالياً'
+            'غير مستوفي حاليًا'
         )
         self.save(update_fields=['score', 'recommendation'])
 
