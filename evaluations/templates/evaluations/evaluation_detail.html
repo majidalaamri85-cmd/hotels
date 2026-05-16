@@ -112,7 +112,7 @@
 												<div class="attached-images mt-3">
 													{% for img in r.images.all %}
 														<a href="{{ img.image.url }}" target="_blank" rel="noopener">
-															<img src="{{ img.image.url }}" alt="صورة بند {{ c.code }}" class="report-thumb">
+														<img src="{{ img.image.url }}" alt="صورة بند {{ c.code }}" class="report-thumb" onerror="this.closest('a').style.display='none'">
 														</a>
 													{% endfor %}
 												</div>
@@ -144,7 +144,7 @@
 		<div class="attached-images mt-3">
 			{% for img in general_images %}
 				<a href="{{ img.image.url }}" target="_blank" rel="noopener">
-					<img src="{{ img.image.url }}" alt="صورة عامة للتقييم" class="report-thumb report-thumb-lg">
+					<img src="{{ img.image.url }}" alt="صورة عامة للتقييم" class="report-thumb report-thumb-lg" onerror="this.closest('a').style.display='none'">
 				</a>
 			{% endfor %}
 		</div>
