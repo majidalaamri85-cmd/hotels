@@ -32,6 +32,33 @@
 	</div>
 </section>
 
+<section class="workflow-summary fade-up fade-delay-1">
+	<div class="workflow-item">
+		<span>إجمالي البنود</span>
+		<strong>{{ stats.total|default:0 }}</strong>
+	</div>
+	<div class="workflow-item status-ok">
+		<span>مستوفي</span>
+		<strong>{{ stats.ok|default:0 }}</strong>
+	</div>
+	<div class="workflow-item status-no">
+		<span>غير مستوفي</span>
+		<strong>{{ stats.no|default:0 }}</strong>
+	</div>
+	<div class="workflow-item status-na">
+		<span>لا ينطبق</span>
+		<strong>{{ stats.na|default:0 }}</strong>
+	</div>
+	<div class="workflow-item">
+		<span>صور مرفقة</span>
+		<strong>{{ stats.image_count|default:0 }}</strong>
+	</div>
+	<div class="workflow-item {% if stats.failed_without_images %}status-no{% endif %}">
+		<span>غير مستوفي بلا صور</span>
+		<strong>{{ stats.failed_without_images|default:0 }}</strong>
+	</div>
+</section>
+
 <form method="post" enctype="multipart/form-data" class="fade-up fade-delay-1">
 	{% csrf_token %}
 	{% if has_active_criteria %}

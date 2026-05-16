@@ -20,14 +20,14 @@
 		<span class="metric-note">بند نشط ضمن النظام</span>
 	</div>
 	<div class="metric-card fade-up fade-delay-1">
-		<span class="metric-label">آخر التقييمات</span>
-		<strong class="metric-number">{{ evaluations|length }}</strong>
-		<span class="metric-note">تقييم ظاهر في اللوحة</span>
+		<span class="metric-label">إجمالي التقييمات</span>
+		<strong class="metric-number">{{ evaluations_count }}</strong>
+		<span class="metric-note">تقييم محفوظ في النظام</span>
 	</div>
 	<div class="metric-card fade-up fade-delay-2">
-		<span class="metric-label">الإجراء التالي</span>
-		<strong class="metric-action">زيارة جديدة</strong>
-		<span class="metric-note">ابدأ من نموذج التقييم</span>
+		<span class="metric-label">الفنادق المسجلة</span>
+		<strong class="metric-number">{{ hotels_count }}</strong>
+		<span class="metric-note">فندق جاهز للتقييم</span>
 	</div>
 </section>
 
@@ -47,6 +47,8 @@
 					<th>الفندق</th>
 					<th>تاريخ الزيارة</th>
 					<th>النتيجة</th>
+					<th>غير مستوفي</th>
+					<th>الصور</th>
 					<th>الإجراء</th>
 				</tr>
 			</thead>
@@ -59,11 +61,13 @@
 						</td>
 						<td>{{ e.visit_date }}</td>
 						<td><span class="score-pill">{{ e.score }}%</span></td>
+						<td><span class="badge badge-soft">{{ e.failed_count|default:0 }}</span></td>
+						<td><span class="badge badge-soft">{{ e.image_count|default:0 }}</span></td>
 						<td><a class="btn btn-sm btn-outline-primary-soft" href="{% url 'evaluation_detail' e.id %}">عرض التقييم</a></td>
 					</tr>
 				{% empty %}
 					<tr>
-						<td colspan="4">
+						<td colspan="6">
 							<div class="empty-state">
 								<strong>لا توجد تقييمات حتى الآن</strong>
 								<span>ابدأ بإضافة فندق ثم إنشاء تقييم جديد.</span>

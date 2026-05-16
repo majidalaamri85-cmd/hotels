@@ -28,7 +28,26 @@ def parse_visiting_team_members(values):
 
 def get_dashboard_cache_key():
     """Generate cache key for dashboard data"""
-    return 'dashboard_data'
+    return 'dashboard_data_v2'
+
+
+def get_evaluation_stats(evaluation):
+    responses = evaluation.responses.all()
+    stats = responses.aggregate(
+        total=Count('id'),
+        ok=Count('id', filter=Q(result='OK')),
+        no=Count('id', filter=Q(result='NO')),
+        na=Count('id', filter=Q(result='NA')),
+        failed_with_images=Count('id', filter=Q(result='NO', images__isnull=False), distinct=True),
+        image_count=Count('images', distinct=True),
+    )
+    total = stats['total'] or 0
+    reviewed = (stats['ok'] or 0) + (stats['no'] or 0) + (stats['na'] or 0)
+    stats['reviewed'] = reviewed
+    stats['remaining'] = max(total - reviewed, 0)
+    stats['failed_without_images'] = max((stats['no'] or 0) - (stats['failed_with_images'] or 0), 0)
+    stats['progress_percent'] = round((reviewed / total) * 100) if total else 0
+    return stats
 
 
 def safe_cache_get(key, default=None):
@@ -114,25 +133,38 @@ def dashboard(request):
     if cached_data:
         evaluations = cached_data['evaluations']
         criteria_count = cached_data['criteria_count']
+        hotels_count = cached_data.get('hotels_count', 0)
+        evaluations_count = cached_data.get('evaluations_count', len(evaluations))
     else:
         try:
             evaluations = list(
-                Evaluation.objects.select_related('hotel').order_by('-id')[:20]
+                Evaluation.objects.select_related('hotel').annotate(
+                    failed_count=Count('responses', filter=Q(responses__result='NO')),
+                    image_count=Count('responses__images', distinct=True),
+                ).order_by('-id')[:20]
             )
             criteria_count = Criterion.objects.filter(active=True).count()
+            hotels_count = Hotel.objects.count()
+            evaluations_count = Evaluation.objects.count()
             cached_data = {
                 'evaluations': evaluations,
-                'criteria_count': criteria_count
+                'criteria_count': criteria_count,
+                'hotels_count': hotels_count,
+                'evaluations_count': evaluations_count,
             }
             safe_cache_set(cache_key, cached_data, CACHE_TIMEOUT_SHORT)
         except Exception:
             logger.exception('Failed to load dashboard data')
             evaluations = []
             criteria_count = 0
+            hotels_count = 0
+            evaluations_count = 0
     
     return render(request, 'evaluations/dashboard.html', {
         'evaluations': evaluations,
-        'criteria_count': criteria_count
+        'criteria_count': criteria_count,
+        'hotels_count': hotels_count,
+        'evaluations_count': evaluations_count,
     })
 
 
@@ -156,6 +188,10 @@ def hotel_create(request):
 def evaluation_create(request):
     """Create a new evaluation with optimized query."""
     ensure_criteria_seeded()
+    if not Hotel.objects.exists():
+        messages.warning(request, 'أضف فندقاً أولاً قبل بدء التقييم.')
+        return redirect('hotel_create')
+
     form = EvaluationForm(request.POST or None)
     team_members = request.POST.getlist('visiting_team_members[]') if request.method == 'POST' else ['']
     active_criteria_qs = Criterion.objects.filter(active=True)
@@ -346,6 +382,7 @@ def evaluation_detail(request, pk):
         'sections': sections,
         'responses': responses,
         'general_images': ev.general_images.all().order_by('-uploaded_at'),
+        'stats': get_evaluation_stats(ev),
         'team_members': parse_visiting_team_members(ev.visiting_team.splitlines()),
         'has_active_criteria': bool(active_criteria),
     })
@@ -366,5 +403,6 @@ def report_print(request, pk):
         'ev': ev,
         'all_rows': all_rows,
         'general_images': ev.general_images.all().order_by('-uploaded_at'),
+        'stats': get_evaluation_stats(ev),
         'team_members': parse_visiting_team_members(ev.visiting_team.splitlines()),
     })

@@ -52,6 +52,20 @@
                     </div>
                 </div>
                 <div class="report-info-item">
+                    <span class="report-info-icon"><i class="bi bi-x-circle"></i></span>
+                    <div>
+                        <p class="mb-0 text-muted small">غير مستوفي</p>
+                        <p class="mb-0 fw-semibold">{{ stats.no|default:0 }} بند</p>
+                    </div>
+                </div>
+                <div class="report-info-item">
+                    <span class="report-info-icon"><i class="bi bi-images"></i></span>
+                    <div>
+                        <p class="mb-0 text-muted small">الصور المرفقة</p>
+                        <p class="mb-0 fw-semibold">{{ stats.image_count|default:0 }} صورة</p>
+                    </div>
+                </div>
+                <div class="report-info-item">
                     <span class="report-info-icon"><i class="bi bi-patch-check"></i></span>
                     <div>
                         <p class="mb-0 text-muted small">التوصية</p>

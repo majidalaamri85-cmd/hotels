@@ -660,6 +660,52 @@ select:focus,
   color: rgba(255, 255, 255, 0.85);
 }
 
+.workflow-summary {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.workflow-item {
+  min-height: 92px;
+  display: grid;
+  align-content: center;
+  gap: 0.2rem;
+  padding: 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 4px 12px rgba(19, 38, 31, 0.04);
+}
+
+.workflow-item span {
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.workflow-item strong {
+  color: var(--brand);
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+.workflow-item.status-ok {
+  border-color: #b6e3c8;
+  background: #f3fbf6;
+}
+
+.workflow-item.status-no {
+  border-color: #f2b8b5;
+  background: #fff7f6;
+}
+
+.workflow-item.status-na {
+  border-color: #f1dfac;
+  background: #fffaf0;
+}
+
 .evaluation-accordion .accordion-item {
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -908,7 +954,8 @@ select:focus,
 
   .metrics-grid,
   .detail-summary,
-  .upload-panel {
+  .upload-panel,
+  .workflow-summary {
     grid-template-columns: 1fr;
   }
 
