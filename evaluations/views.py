@@ -515,7 +515,7 @@ def evaluation_detail(request, pk):
     })
 
 
-@cache_control(max_age=CACHE_TIMEOUT_MEDIUM, public=True)
+@cache_control(no_cache=True, no_store=True, must_revalidate=True, private=True)
 def report_print(request, license_no, report_no):
     """Print report by matching hotel license number with report number."""
     ev = get_object_or_404(
