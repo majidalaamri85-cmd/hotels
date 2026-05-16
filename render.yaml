@@ -3,7 +3,7 @@ services:
     name: hotel-tourism-evaluation
     env: python
     buildCommand: pip install -r requirements.txt && python manage.py migrate && python manage.py collectstatic --noinput && python manage.py seed_hotel_criteria
-    startCommand: python manage.py createcachetable django_cache || true && gunicorn hotel_project.wsgi:application
+    startCommand: gunicorn hotel_project.wsgi:application --bind 0.0.0.0:$PORT
     envVars:
       - key: SECRET_KEY
         generateValue: true
@@ -11,6 +11,8 @@ services:
         value: False
       - key: ALLOWED_HOSTS
         value: .onrender.com
+      - key: CACHE_BACKEND
+        value: locmem
       - key: PYTHON_VERSION
         value: 3.12.4
       - key: DATABASE_URL
