@@ -10,17 +10,27 @@ ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '.onrender.com').split(',')
 
 CSRF_TRUSTED_ORIGINS = os.environ.get('CSRF_TRUSTED_ORIGINS', 'https://*.onrender.com').split(',')
 
+_CLOUDINARY_URL_TMP = os.environ.get('CLOUDINARY_URL', '').strip()
+_CLOUDINARY_CLOUD_NAME_TMP = os.environ.get('CLOUDINARY_CLOUD_NAME', '').strip()
+_CLOUDINARY_API_KEY_TMP = os.environ.get('CLOUDINARY_API_KEY', '').strip()
+_CLOUDINARY_API_SECRET_TMP = os.environ.get('CLOUDINARY_API_SECRET', '').strip()
+_USE_CLOUDINARY_EARLY = bool(
+    _CLOUDINARY_URL_TMP or
+    (_CLOUDINARY_CLOUD_NAME_TMP and _CLOUDINARY_API_KEY_TMP and _CLOUDINARY_API_SECRET_TMP)
+)
+
 INSTALLED_APPS = [
-    'cloudinary_storage',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'cloudinary',
-    'evaluations'
+    'evaluations',
 ]
+
+if _USE_CLOUDINARY_EARLY:
+    INSTALLED_APPS = ['cloudinary_storage'] + INSTALLED_APPS + ['cloudinary']
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -112,11 +122,11 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 
 # File storage configuration
-CLOUDINARY_URL = os.environ.get('CLOUDINARY_URL', '').strip()
-CLOUDINARY_CLOUD_NAME = os.environ.get('CLOUDINARY_CLOUD_NAME', '').strip()
-CLOUDINARY_API_KEY = os.environ.get('CLOUDINARY_API_KEY', '').strip()
-CLOUDINARY_API_SECRET = os.environ.get('CLOUDINARY_API_SECRET', '').strip()
-USE_CLOUDINARY = bool(CLOUDINARY_URL or (CLOUDINARY_CLOUD_NAME and CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET))
+CLOUDINARY_URL = _CLOUDINARY_URL_TMP
+CLOUDINARY_CLOUD_NAME = _CLOUDINARY_CLOUD_NAME_TMP
+CLOUDINARY_API_KEY = _CLOUDINARY_API_KEY_TMP
+CLOUDINARY_API_SECRET = _CLOUDINARY_API_SECRET_TMP
+USE_CLOUDINARY = _USE_CLOUDINARY_EARLY
 
 STORAGES = {
     'default': {
