@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.db.models import Prefetch, Count, Q
 from django.views.decorators.cache import cache_control
-from django.views.decorators.http import condition
+from django.views.decorators.http import condition, require_POST
 from django.utils.decorators import method_decorator
 from django.core.cache import cache
 import logging
@@ -405,6 +405,17 @@ def evaluation_create(request):
         'active_criteria_count': active_criteria_count,
         'has_active_criteria': active_criteria_count > 0,
     })
+
+
+@require_POST
+def evaluation_delete(request, pk):
+    """Delete an evaluation/report from dashboard actions."""
+    ev = get_object_or_404(Evaluation.objects.select_related('hotel'), pk=pk)
+    hotel_name = ev.hotel.name
+    ev.delete()
+    safe_cache_delete(get_dashboard_cache_key())
+    messages.success(request, f'تم حذف تقرير التقييم للفندق {hotel_name} بنجاح')
+    return redirect('dashboard')
 
 
 @cache_control(max_age=CACHE_TIMEOUT_SHORT, public=True)
