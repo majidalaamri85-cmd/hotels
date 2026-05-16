@@ -34,6 +34,7 @@
 
 <form method="post" enctype="multipart/form-data" class="fade-up fade-delay-1">
 	{% csrf_token %}
+	{% if has_active_criteria %}
 	<div class="accordion evaluation-accordion" id="acc">
 		{% for s in sections %}
 			<div class="accordion-item">
@@ -90,6 +91,11 @@
 			</div>
 		{% endfor %}
 	</div>
+	{% else %}
+		<div class="alert alert-warning" role="alert">
+			لا توجد بنود مفعلة حالياً لعرضها في التقييم. يرجى تفعيل البنود من لوحة الإدارة.
+		</div>
+	{% endif %}
 
 	<div class="upload-panel mt-3">
 		<div>

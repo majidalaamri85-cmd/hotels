@@ -107,24 +107,26 @@ def evaluation_create(request):
     """Create a new evaluation with optimized query."""
     form = EvaluationForm(request.POST or None)
     team_members = request.POST.getlist('visiting_team_members[]') if request.method == 'POST' else ['']
-    active_criteria_count = Criterion.objects.filter(active=True).count()
+    active_criteria_qs = Criterion.objects.filter(active=True)
+    criteria_qs = active_criteria_qs if active_criteria_qs.exists() else Criterion.objects.all()
+    active_criteria_count = criteria_qs.count()
     sections = Section.objects.filter(
-        subsections__criteria__active=True
+        subsections__criteria__in=criteria_qs
     ).annotate(
         criteria_count=Count(
             'subsections__criteria',
-            filter=Q(subsections__criteria__active=True),
+            filter=Q(subsections__criteria__in=criteria_qs),
             distinct=True,
         )
     ).distinct().order_by('order').prefetch_related(
         Prefetch(
             'subsections',
             queryset=SubSection.objects.filter(
-                criteria__active=True
+                criteria__in=criteria_qs
             ).distinct().order_by('order').prefetch_related(
                 Prefetch(
                     'criteria',
-                    queryset=Criterion.objects.filter(active=True).order_by('order', 'id')
+                    queryset=criteria_qs.order_by('order', 'id')
                 )
             )
         )
@@ -139,7 +141,7 @@ def evaluation_create(request):
         ev.save()
         
         # Batch create responses for all active criteria
-        active_criteria = Criterion.objects.filter(active=True).values(
+        active_criteria = criteria_qs.values(
             'id', 'corrective_action'
         )
         
@@ -176,6 +178,27 @@ def evaluation_detail(request, pk):
     Uses Prefetch for nested queries and select_related.
     """
     ev = get_object_or_404(Evaluation, pk=pk)
+
+    # Keep old evaluations in sync with currently active criteria so items don't disappear.
+    active_criteria_qs = Criterion.objects.filter(active=True)
+    criteria_qs = active_criteria_qs if active_criteria_qs.exists() else Criterion.objects.all()
+    active_criteria = list(
+        criteria_qs.values('id', 'corrective_action')
+    )
+    existing_criterion_ids = set(
+        ev.responses.values_list('criterion_id', flat=True)
+    )
+    missing_responses = [
+        Response(
+            evaluation=ev,
+            criterion_id=criterion['id'],
+            corrective_action=criterion['corrective_action'],
+        )
+        for criterion in active_criteria
+        if criterion['id'] not in existing_criterion_ids
+    ]
+    if missing_responses:
+        Response.objects.bulk_create(missing_responses, batch_size=100)
     
     if request.method == 'POST':
         # Batch update responses
@@ -232,16 +255,14 @@ def evaluation_detail(request, pk):
     sections = Section.objects.order_by('order').prefetch_related(
         Prefetch(
             'subsections',
-            queryset=SubSection.objects.order_by('order').prefetch_related(
+            queryset=SubSection.objects.filter(criteria__in=criteria_qs).distinct().order_by('order').prefetch_related(
                 Prefetch(
                     'criteria',
-                    queryset=Criterion.objects.filter(
-                        active=True
-                    ).order_by('order', 'id')
+                    queryset=criteria_qs.order_by('order', 'id')
                 )
             )
         )
-    )
+    ).filter(subsections__criteria__in=criteria_qs).distinct()
     
     # Create response map for template lookup
     responses = {r.criterion_id: r for r in responses_qs}
@@ -251,6 +272,7 @@ def evaluation_detail(request, pk):
         'sections': sections,
         'responses': responses,
         'team_members': parse_visiting_team_members(ev.visiting_team.splitlines()),
+        'has_active_criteria': bool(active_criteria),
     })
 
 
