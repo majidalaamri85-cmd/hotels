@@ -202,6 +202,31 @@ def hotel_edit(request, pk):
     })
 
 
+def evaluation_edit(request, pk):
+    """Edit basic evaluation info (hotel, date, status, team, notes)."""
+    ev = get_object_or_404(Evaluation, pk=pk)
+    form = EvaluationForm(request.POST or None, instance=ev)
+    team_members = (
+        request.POST.getlist('visiting_team_members[]')
+        if request.method == 'POST'
+        else ev.visiting_team.splitlines() or ['']
+    )
+    if form.is_valid():
+        ev = form.save(commit=False)
+        clean_members = parse_visiting_team_members(team_members)
+        ev.visiting_team = '\n'.join(clean_members)
+        ev.save()
+        safe_cache_delete(get_dashboard_cache_key())
+        messages.success(request, 'تم تحديث بيانات التقييم بنجاح')
+        return redirect('evaluation_detail', pk=ev.pk)
+    return render(request, 'evaluations/form.html', {
+        'form': form,
+        'title': f'تعديل تقييم {ev.hotel.name}',
+        'form_kind': 'evaluation',
+        'team_members': team_members if team_members else [''],
+    })
+
+
 def evaluation_create(request):
     """Create a new evaluation with optimized query."""
     ensure_criteria_seeded()
