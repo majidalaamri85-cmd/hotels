@@ -7,6 +7,7 @@ function initializeOptimizations() {
   optimizeTableScrolling();
   setupDependentWilayatSelect();
   setupHotelLocationLink();
+  setupVisitingTeamFields();
 }
 
 function lazyLoadImages() {
@@ -141,11 +142,13 @@ function setupDependentWilayatSelect() {
 }
 
 function setupHotelLocationLink() {
+  const triggerButton = document.getElementById('hotel-location-trigger');
   const locationLink = document.getElementById('hotel-location-link');
+  const locationStatus = document.getElementById('hotel-location-status');
   const latitudeField = document.getElementById('id_latitude');
   const longitudeField = document.getElementById('id_longitude');
 
-  if (!locationLink || !latitudeField || !longitudeField) {
+  if (!triggerButton || !locationLink || !locationStatus || !latitudeField || !longitudeField) {
     return;
   }
 
@@ -157,17 +160,102 @@ function setupHotelLocationLink() {
       locationLink.href = '#';
       locationLink.setAttribute('aria-disabled', 'true');
       locationLink.classList.add('disabled');
+      locationStatus.textContent = 'لم يتم تحديد الموقع بعد.';
       return;
     }
 
     locationLink.href = `https://www.google.com/maps?q=${encodeURIComponent(latitude)},${encodeURIComponent(longitude)}`;
     locationLink.setAttribute('aria-disabled', 'false');
     locationLink.classList.remove('disabled');
+    locationStatus.textContent = 'تم تحديد الموقع بنجاح.';
   }
+
+  triggerButton.addEventListener('click', () => {
+    if (!('geolocation' in navigator)) {
+      locationStatus.textContent = 'المتصفح لا يدعم تحديد الموقع.';
+      return;
+    }
+
+    triggerButton.disabled = true;
+    locationStatus.textContent = 'جاري تحديد الموقع...';
+
+    navigator.geolocation.getCurrentPosition(
+      position => {
+        latitudeField.value = position.coords.latitude.toFixed(7);
+        longitudeField.value = position.coords.longitude.toFixed(7);
+        triggerButton.disabled = false;
+        syncLocationLink();
+        window.open(locationLink.href, '_blank', 'noopener');
+      },
+      () => {
+        triggerButton.disabled = false;
+        locationStatus.textContent = 'تعذر تحديد الموقع. يرجى السماح بالوصول للموقع ثم المحاولة.';
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 12000,
+        maximumAge: 0,
+      }
+    );
+  });
 
   latitudeField.addEventListener('input', syncLocationLink);
   longitudeField.addEventListener('input', syncLocationLink);
   syncLocationLink();
+}
+
+function setupVisitingTeamFields() {
+  const list = document.getElementById('visitor-team-list');
+  const addButton = document.getElementById('visitor-add-person');
+
+  if (!list || !addButton) {
+    return;
+  }
+
+  function createRow(value = '') {
+    const row = document.createElement('div');
+    row.className = 'visitor-person-row';
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.name = 'visiting_team_members[]';
+    input.className = 'form-control';
+    input.placeholder = 'اسم الشخص';
+    input.value = value;
+
+    const removeButton = document.createElement('button');
+    removeButton.type = 'button';
+    removeButton.className = 'btn btn-ghost visitor-remove-btn';
+    removeButton.setAttribute('aria-label', 'حذف الشخص');
+    removeButton.textContent = 'حذف';
+
+    row.appendChild(input);
+    row.appendChild(removeButton);
+    return row;
+  }
+
+  function ensureAtLeastOneRow() {
+    if (!list.querySelector('.visitor-person-row')) {
+      list.appendChild(createRow(''));
+    }
+  }
+
+  addButton.addEventListener('click', () => {
+    const row = createRow('');
+    list.appendChild(row);
+    row.querySelector('input').focus();
+  });
+
+  list.addEventListener('click', event => {
+    const removeButton = event.target.closest('.visitor-remove-btn');
+    if (!removeButton) {
+      return;
+    }
+    removeButton.closest('.visitor-person-row')?.remove();
+    ensureAtLeastOneRow();
+  });
+
+  ensureAtLeastOneRow();
 }
 
 if (typeof module !== 'undefined' && module.exports) {
@@ -177,5 +265,6 @@ if (typeof module !== 'undefined' && module.exports) {
     enableSmoothScrolling,
     setupDependentWilayatSelect,
     setupHotelLocationLink,
+    setupVisitingTeamFields,
   };
 }

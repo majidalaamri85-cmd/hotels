@@ -58,21 +58,16 @@
                         <p class="mb-0 fw-semibold">{{ ev.recommendation }}</p>
                     </div>
                 </div>
-                {% if ev.visiting_team %}
+                {% if team_members %}
                 <div class="report-info-item">
                     <span class="report-info-icon"><i class="bi bi-people"></i></span>
                     <div>
                         <p class="mb-0 text-muted small">الفريق الزائر</p>
-                        <p class="mb-0 fw-semibold">{{ ev.visiting_team }}</p>
-                    </div>
-                </div>
-                {% endif %}
-                {% if ev.additional_person %}
-                <div class="report-info-item">
-                    <span class="report-info-icon"><i class="bi bi-person-plus"></i></span>
-                    <div>
-                        <p class="mb-0 text-muted small">شخص آخر</p>
-                        <p class="mb-0 fw-semibold">{{ ev.additional_person }}</p>
+                        <p class="mb-0 fw-semibold">
+                            {% for member in team_members %}
+                                {{ member }}{% if not forloop.last %}، {% endif %}
+                            {% endfor %}
+                        </p>
                     </div>
                 </div>
                 {% endif %}

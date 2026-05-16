@@ -20,6 +20,10 @@ CACHE_TIMEOUT_MEDIUM = 3600  # 1 hour
 CACHE_TIMEOUT_LONG = 86400  # 24 hours
 
 
+def parse_visiting_team_members(values):
+    return [member.strip() for member in values if member and member.strip()]
+
+
 def get_dashboard_cache_key():
     """Generate cache key for dashboard data"""
     return 'dashboard_data'
@@ -102,9 +106,14 @@ def hotel_create(request):
 def evaluation_create(request):
     """Create a new evaluation with optimized query."""
     form = EvaluationForm(request.POST or None)
+    team_members = request.POST.getlist('visiting_team_members[]') if request.method == 'POST' else ['']
+
     if form.is_valid():
         ev = form.save(commit=False)
         ev.evaluator = request.user if request.user.is_authenticated else None
+        clean_members = parse_visiting_team_members(team_members)
+        ev.visiting_team = '\n'.join(clean_members)
+        ev.additional_person = ''
         ev.save()
         
         # Batch create responses for all active criteria
@@ -131,6 +140,7 @@ def evaluation_create(request):
         'form': form,
         'title': 'تقييم جديد',
         'form_kind': 'evaluation',
+        'team_members': team_members if team_members else [''],
     })
 
 
@@ -214,7 +224,8 @@ def evaluation_detail(request, pk):
     return render(request, 'evaluations/evaluation_detail.html', {
         'ev': ev,
         'sections': sections,
-        'responses': responses
+        'responses': responses,
+        'team_members': parse_visiting_team_members(ev.visiting_team.splitlines()),
     })
 
 
@@ -232,5 +243,6 @@ def report_print(request, pk):
     return render(request, 'evaluations/report_print.html', {
         'ev': ev,
         'all_rows': all_rows,
-        'general_images': ev.general_images.all().order_by('-uploaded_at')
+        'general_images': ev.general_images.all().order_by('-uploaded_at'),
+        'team_members': parse_visiting_team_members(ev.visiting_team.splitlines()),
     })

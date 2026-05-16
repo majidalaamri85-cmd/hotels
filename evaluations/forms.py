@@ -98,7 +98,18 @@ def get_wilayat_choices(governorate=None):
 class HotelForm(forms.ModelForm):
     class Meta:
         model = Hotel
-        fields = '__all__'
+        fields = [
+            'name',
+            'governorate',
+            'wilayat',
+            'license_no',
+            'rooms_count',
+            'target_stars',
+            'phone',
+            'email',
+            'latitude',
+            'longitude',
+        ]
         labels = {
             'name': 'اسم الفندق',
             'governorate': 'المحافظة',
@@ -108,14 +119,14 @@ class HotelForm(forms.ModelForm):
             'target_stars': 'الفئة المستهدفة',
             'phone': 'رقم الهاتف',
             'email': 'البريد الإلكتروني',
-            'latitude': 'خط العرض',
-            'longitude': 'خط الطول',
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['governorate'].widget = forms.Select(choices=[('', 'اختر المحافظة')] + GOVERNORATE_CHOICES)
         self.fields['wilayat'].widget = forms.Select(choices=[('', 'اختر الولاية')] + WILAYAT_CHOICES)
+        self.fields['latitude'].widget = forms.HiddenInput()
+        self.fields['longitude'].widget = forms.HiddenInput()
         self.fields['latitude'].widget.attrs.setdefault('step', '0.0000001')
         self.fields['longitude'].widget.attrs.setdefault('step', '0.0000001')
         for field in self.fields.values():
@@ -138,12 +149,10 @@ class HotelForm(forms.ModelForm):
 class EvaluationForm(forms.ModelForm):
     class Meta:
         model = Evaluation
-        fields = ['hotel', 'visit_date', 'visiting_team', 'additional_person', 'status', 'general_notes']
+        fields = ['hotel', 'visit_date', 'status', 'general_notes']
         labels = {
             'hotel': 'الفندق',
             'visit_date': 'تاريخ الزيارة',
-            'visiting_team': 'الفريق الزائر',
-            'additional_person': 'شخص آخر',
             'status': 'حالة التقييم',
             'general_notes': 'ملاحظات عامة',
         }
