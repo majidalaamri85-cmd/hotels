@@ -109,9 +109,11 @@
                                 <td>{{ r.corrective_action|default:'-' }}</td>
                                 <td>
                                     {% for img in r.images.all %}
-                                        <a href="{{ img.image.url }}" target="_blank" rel="noopener">
-                                            <img src="{{ img.image.url }}" alt="صورة بند {{ r.criterion.code }}" class="report-thumb">
-                                        </a>
+                                        {% if img.image %}
+                                            <a href="{{ img.image.url }}" target="_blank" rel="noopener">
+                                                <img src="{{ img.image.url }}" alt="صورة بند {{ r.criterion.code }}" class="report-thumb">
+                                            </a>
+                                        {% endif %}
                                     {% empty %}
                                         -
                                     {% endfor %}
@@ -131,9 +133,11 @@
             <h3 class="h5 mb-3 report-section-title"><i class="bi bi-camera-fill ms-1"></i>الصور العامة للتقييم</h3>
             <div class="d-flex flex-wrap gap-2">
                 {% for img in general_images %}
-                    <a href="{{ img.image.url }}" target="_blank" rel="noopener">
-                        <img src="{{ img.image.url }}" alt="صورة عامة للتقييم" class="report-thumb report-thumb-lg">
-                    </a>
+                    {% if img.image %}
+                        <a href="{{ img.image.url }}" target="_blank" rel="noopener">
+                            <img src="{{ img.image.url }}" alt="صورة عامة للتقييم" class="report-thumb report-thumb-lg">
+                        </a>
+                    {% endif %}
                 {% empty %}
                     <p class="text-muted mb-0">لا توجد صور عامة مرفقة.</p>
                 {% endfor %}

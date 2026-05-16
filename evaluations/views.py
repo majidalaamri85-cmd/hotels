@@ -324,7 +324,7 @@ def evaluation_detail(request, pk):
     # Optimize queries with Prefetch and select_related
     responses_qs = ev.responses.select_related('criterion').order_by(
         'criterion__order', 'criterion_id'
-    )
+    ).prefetch_related('images')
     
     sections = Section.objects.order_by('order').prefetch_related(
         Prefetch(
@@ -345,6 +345,7 @@ def evaluation_detail(request, pk):
         'ev': ev,
         'sections': sections,
         'responses': responses,
+        'general_images': ev.general_images.all().order_by('-uploaded_at'),
         'team_members': parse_visiting_team_members(ev.visiting_team.splitlines()),
         'has_active_criteria': bool(active_criteria),
     })

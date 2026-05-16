@@ -81,6 +81,15 @@
 												<label class="form-label small text-muted">الإجراء التصحيحي</label>
 												<textarea name="action_{{ r.id }}" class="form-control" rows="2" placeholder="أدخل الإجراء التصحيحي">{{ r.corrective_action }}</textarea>
 											</div>
+											{% if r.images.all %}
+												<div class="attached-images mt-3">
+													{% for img in r.images.all %}
+														<a href="{{ img.image.url }}" target="_blank" rel="noopener">
+															<img src="{{ img.image.url }}" alt="صورة بند {{ c.code }}" class="report-thumb">
+														</a>
+													{% endfor %}
+												</div>
+											{% endif %}
 										</div>
 									{% endif %}
 								{% endwith %}
@@ -104,6 +113,15 @@
 		</div>
 		<input type="file" multiple accept="image/*" name="general_images" class="form-control">
 	</div>
+	{% if general_images %}
+		<div class="attached-images mt-3">
+			{% for img in general_images %}
+				<a href="{{ img.image.url }}" target="_blank" rel="noopener">
+					<img src="{{ img.image.url }}" alt="صورة عامة للتقييم" class="report-thumb report-thumb-lg">
+				</a>
+			{% endfor %}
+		</div>
+	{% endif %}
 
 	<div class="sticky-save">
 		<button class="btn btn-primary-soft btn-lg" type="submit">حفظ التقييم وحساب النتيجة</button>

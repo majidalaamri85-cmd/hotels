@@ -862,6 +862,12 @@ select:focus,
   height: 110px;
 }
 
+.attached-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
 .report-emblem-wrap {
   width: clamp(80px, 20vw, 110px);
   height: clamp(80px, 20vw, 110px);
