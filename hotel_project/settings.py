@@ -5,11 +5,18 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-secret-key-change')
 DEBUG = os.environ.get('DEBUG', 'True').lower() == 'true'
-ALLOWED_HOSTS = ['*']
 
-CSRF_TRUSTED_ORIGINS = []
-if os.environ.get('RENDER_EXTERNAL_HOSTNAME'):
-    CSRF_TRUSTED_ORIGINS = [f"https://{os.environ['RENDER_EXTERNAL_HOSTNAME']}"]
+default_hosts = ['127.0.0.1', 'localhost']
+env_hosts = [h.strip() for h in os.environ.get('ALLOWED_HOSTS', '').split(',') if h.strip()]
+render_hostname = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
+if render_hostname:
+    env_hosts.append(render_hostname)
+ALLOWED_HOSTS = env_hosts or default_hosts
+
+csrf_origins = [o.strip() for o in os.environ.get('CSRF_TRUSTED_ORIGINS', '').split(',') if o.strip()]
+if render_hostname:
+    csrf_origins.append(f"https://{render_hostname}")
+CSRF_TRUSTED_ORIGINS = csrf_origins
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -82,12 +89,22 @@ if DEBUG:
         }
     }
 else:
-    CACHES = {
-        'default': {
-            'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
-            'LOCATION': 'django_cache',
+    # Allow explicit override when running without cache table in some environments.
+    cache_backend = os.environ.get('CACHE_BACKEND', 'db').lower()
+    if cache_backend == 'locmem':
+        CACHES = {
+            'default': {
+                'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+                'LOCATION': 'prod-fallback-cache',
+            }
         }
-    }
+    else:
+        CACHES = {
+            'default': {
+                'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+                'LOCATION': 'django_cache',
+            }
+        }
 
 # Cache timeout settings (in seconds)
 CACHE_TIMEOUT = 300  # 5 minutes default
@@ -136,6 +153,10 @@ SESSION_COOKIE_AGE = 1209600  # 2 weeks
 SECURE_SSL_REDIRECT = not DEBUG
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_HSTS_SECONDS = 3600 if not DEBUG else 0
+SECURE_HSTS_INCLUDE_SUBDOMAINS = not DEBUG
+SECURE_HSTS_PRELOAD = not DEBUG
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_SECURITY_POLICY = {
     'default-src': ("'self'",),
