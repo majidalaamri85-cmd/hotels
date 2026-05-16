@@ -7,7 +7,7 @@ from django.utils.decorators import method_decorator
 from django.core.cache import cache
 import logging
 from .models import *
-from .forms import HotelForm, EvaluationForm
+from .forms import HotelForm, EvaluationForm, GOVERNORATE_WILAYAT
 import hashlib
 from datetime import datetime
 
@@ -93,7 +93,9 @@ def hotel_create(request):
         return redirect('dashboard')
     return render(request, 'evaluations/form.html', {
         'form': form,
-        'title': 'إضافة فندق'
+        'title': 'إضافة فندق',
+        'form_kind': 'hotel',
+        'governorate_wilayat_map': GOVERNORATE_WILAYAT,
     })
 
 
@@ -127,7 +129,8 @@ def evaluation_create(request):
     
     return render(request, 'evaluations/form.html', {
         'form': form,
-        'title': 'تقييم جديد'
+        'title': 'تقييم جديد',
+        'form_kind': 'evaluation',
     })
 
 

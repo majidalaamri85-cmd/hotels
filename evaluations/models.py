@@ -94,6 +94,8 @@ class Evaluation(models.Model):
     hotel = models.ForeignKey(Hotel, on_delete=models.CASCADE, related_name='evaluations', verbose_name='الفندق')
     evaluator = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, verbose_name='المقيّم')
     visit_date = models.DateField(verbose_name='تاريخ الزيارة')
+    visiting_team = models.CharField(max_length=255, blank=True, verbose_name='الفريق الزائر')
+    additional_person = models.CharField(max_length=255, blank=True, verbose_name='شخص آخر')
     status = models.CharField(max_length=20, choices=STATUS, default='DRAFT', verbose_name='حالة التقييم')
     general_notes = models.TextField(blank=True, verbose_name='ملاحظات عامة')
     score = models.DecimalField(max_digits=5, decimal_places=2, default=0, verbose_name='النتيجة')

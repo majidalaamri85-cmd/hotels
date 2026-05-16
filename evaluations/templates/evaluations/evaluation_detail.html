@@ -10,6 +10,8 @@
 			<span>الفئة المستهدفة: <strong>{{ ev.hotel.get_target_stars_display }}</strong></span>
 			<span>تاريخ الزيارة: <strong>{{ ev.visit_date }}</strong></span>
 			<span>الحالة: <strong>{{ ev.get_status_display }}</strong></span>
+			{% if ev.visiting_team %}<span>الفريق الزائر: <strong>{{ ev.visiting_team }}</strong></span>{% endif %}
+			{% if ev.additional_person %}<span>شخص آخر: <strong>{{ ev.additional_person }}</strong></span>{% endif %}
 		</div>
 	</div>
 	<div class="score-card">

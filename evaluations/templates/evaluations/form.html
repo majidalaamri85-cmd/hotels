@@ -31,10 +31,22 @@
 			</div>
 		{% endfor %}
 
+		{% if form_kind == 'hotel' %}
+			<div class="field-group field-wide location-actions">
+				<label>الموقع المباشر</label>
+				<p class="form-help mb-2">أدخل خط العرض وخط الطول ثم افتح الموقع مباشرة في الخرائط.</p>
+				<a id="hotel-location-link" class="btn btn-outline-primary-soft location-link" href="#" target="_blank" rel="noopener" aria-disabled="true">فتح الموقع المباشر</a>
+			</div>
+		{% endif %}
+
 		<div class="form-actions">
 			<button class="btn btn-primary-soft px-4" type="submit">حفظ البيانات</button>
 			<a class="btn btn-ghost" href="{% url 'dashboard' %}">إلغاء</a>
 		</div>
 	</form>
+
+	{% if form_kind == 'hotel' %}
+		{{ governorate_wilayat_map|json_script:'governorate-wilayat-data' }}
+	{% endif %}
 </section>
 {% endblock %}
