@@ -305,6 +305,17 @@ img {
   font-weight: 800;
 }
 
+/* ── نجوم التصنيف ── */
+.stars-rating {
+  display: inline-flex;
+  gap: 1px;
+  font-size: 1.05em;
+  line-height: 1;
+  vertical-align: middle;
+}
+.stars-filled { color: #f5a623; letter-spacing: 1px; }
+.stars-empty  { color: #d0d0d0; letter-spacing: 1px; }
+
 .empty-state {
   min-height: 140px;
   display: grid;

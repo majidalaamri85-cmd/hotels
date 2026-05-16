@@ -1,4 +1,5 @@
 {% extends 'evaluations/base.html' %}
+{% load dict_tools %}
 
 {% block content %}
 <section class="dashboard-hero fade-up">
@@ -58,6 +59,7 @@
 						<td>
 							<strong>{{ e.hotel.name }}</strong>
 							<div class="text-muted small">{{ e.hotel.governorate }}{% if e.hotel.wilayat %} - {{ e.hotel.wilayat }}{% endif %}</div>
+							<div>{{ e.hotel.target_stars|stars_html }}</div>
 						</td>
 						<td>{{ e.visit_date }}</td>
 						<td><span class="score-pill">{{ e.score }}%</span></td>

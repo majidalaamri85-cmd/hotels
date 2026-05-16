@@ -9,7 +9,7 @@
 		<p class="section-kicker mb-1">تعديل شامل للتقييم</p>
 		<h2 class="page-title mb-2">{{ hotel.name }}</h2>
 		<div class="summary-meta">
-			<span>الفئة: <strong>{{ ev.hotel.get_target_stars_display }}</strong></span>
+			<span>الفئة: <strong>{{ ev.hotel.get_target_stars_display }} {{ ev.hotel.target_stars|stars_html }}</strong></span>
 			<span>تاريخ الزيارة: <strong>{{ ev.visit_date }}</strong></span>
 			<span>الحالة: <strong>{{ ev.get_status_display }}</strong></span>
 		</div>
