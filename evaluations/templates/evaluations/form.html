@@ -38,14 +38,7 @@
 		{% if form_kind == 'hotel' %}
 			<div class="field-group field-wide location-actions">
 				<label>الموقع المباشر</label>
-				<div class="location-buttons-row">
-					<button id="hotel-location-trigger" class="btn btn-outline-primary-soft" type="button">تحديد موقعي تلقائيًا (GPS)</button>
-					<a id="hotel-location-link" class="btn btn-light-action" href="https://maps.google.com" target="_blank" rel="noopener">فتح خرائط Google</a>
-				</div>
-				<div class="location-paste-row">
-					<input id="hotel-location-paste" type="text" class="form-control" placeholder="الصق رابط Google Maps أو الإحداثيات هنا مثال: 23.5880, 58.3829">
-					<button id="hotel-location-parse" class="btn btn-primary-soft" type="button">تسجيل الموقع</button>
-				</div>
+				<button id="hotel-location-trigger" class="btn btn-outline-primary-soft" type="button">تحديد الموقع المباشر الآن</button>
 				<div id="hotel-location-status" class="form-help">لم يتم تحديد الموقع بعد.</div>
 			</div>
 		{% endif %}
