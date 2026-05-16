@@ -10,7 +10,7 @@
 		<a class="btn btn-sm btn-outline-primary-soft" href="{% url 'dashboard' %}">العودة للوحة الرئيسية</a>
 	</div>
 
-	<form method="post" class="form-grid" novalidate>
+	<form method="post" class="form-grid" enctype="multipart/form-data" novalidate>
 		{% csrf_token %}
 		{% if form.non_field_errors %}
 			<div class="form-errors">
@@ -100,6 +100,20 @@
 														<input type="radio" name="criterion_result_{{ c.id }}" value="NA">
 														<span>لا ينطبق</span>
 													</label>
+												</div>
+												<div class="criterion-failure-fields" data-failure-fields hidden>
+													<div class="field-group">
+														<label for="criterion_note_{{ c.id }}">الملاحظات</label>
+														<textarea id="criterion_note_{{ c.id }}" name="criterion_note_{{ c.id }}" class="form-control" rows="2" placeholder="أدخل الملاحظات"></textarea>
+													</div>
+													<div class="field-group">
+														<label for="criterion_action_{{ c.id }}">الإجراء التصحيحي</label>
+														<textarea id="criterion_action_{{ c.id }}" name="criterion_action_{{ c.id }}" class="form-control" rows="2" placeholder="أدخل الإجراء التصحيحي">{{ c.corrective_action }}</textarea>
+													</div>
+													<div class="field-group">
+														<label for="criterion_images_{{ c.id }}">رفع عدة صور للبند</label>
+														<input id="criterion_images_{{ c.id }}" type="file" multiple accept="image/*" name="criterion_images_{{ c.id }}" class="form-control">
+													</div>
 												</div>
 											</div>
 										{% empty %}

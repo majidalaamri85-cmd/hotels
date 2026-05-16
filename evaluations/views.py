@@ -196,16 +196,37 @@ def evaluation_create(request):
             'id', 'corrective_action'
         )
         
-        responses = [
-            Response(
-                evaluation=ev,
-                criterion_id=c['id'],
-                result=request.POST.get(f'criterion_result_{c["id"]}', 'OK'),
-                corrective_action=c['corrective_action']
+        responses = []
+        for c in active_criteria:
+            result = request.POST.get(f'criterion_result_{c["id"]}', 'OK')
+            responses.append(
+                Response(
+                    evaluation=ev,
+                    criterion_id=c['id'],
+                    result=result,
+                    note=request.POST.get(f'criterion_note_{c["id"]}', '') if result == 'NO' else '',
+                    corrective_action=request.POST.get(
+                        f'criterion_action_{c["id"]}',
+                        c['corrective_action']
+                    ) if result == 'NO' else c['corrective_action'],
+                )
             )
-            for c in active_criteria
-        ]
         Response.objects.bulk_create(responses, batch_size=100)
+
+        response_images = []
+        response_map = {
+            response.criterion_id: response
+            for response in ev.responses.all()
+        }
+        for criterion_id, response in response_map.items():
+            if response.result != 'NO':
+                continue
+            for img in request.FILES.getlist(f'criterion_images_{criterion_id}'):
+                response_images.append(ResponseImage(response=response, image=img))
+        if response_images:
+            ResponseImage.objects.bulk_create(response_images, batch_size=50)
+
+        ev.recalculate()
         
         # Invalidate cache
         safe_cache_delete(get_dashboard_cache_key())

@@ -8,6 +8,7 @@ function initializeOptimizations() {
   setupDependentWilayatSelect();
   setupHotelLocationLink();
   setupVisitingTeamFields();
+  setupCriterionFailureFields();
 }
 
 function lazyLoadImages() {
@@ -252,6 +253,32 @@ function setupVisitingTeamFields() {
   ensureAtLeastOneRow();
 }
 
+function setupCriterionFailureFields() {
+  document.querySelectorAll('.criterion-preview-row').forEach(row => {
+    const fields = row.querySelector('[data-failure-fields]');
+    if (!fields) {
+      return;
+    }
+
+    const inputs = Array.from(fields.querySelectorAll('input, textarea, select'));
+    const radios = Array.from(row.querySelectorAll('input[type="radio"][name^="criterion_result_"]'));
+
+    function syncFields() {
+      const selected = radios.find(radio => radio.checked);
+      const showFields = selected?.value === 'NO';
+      fields.hidden = !showFields;
+      inputs.forEach(input => {
+        input.disabled = !showFields;
+      });
+    }
+
+    radios.forEach(radio => {
+      radio.addEventListener('change', syncFields);
+    });
+    syncFields();
+  });
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     lazyLoadImages,
@@ -260,5 +287,6 @@ if (typeof module !== 'undefined' && module.exports) {
     setupDependentWilayatSelect,
     setupHotelLocationLink,
     setupVisitingTeamFields,
+    setupCriterionFailureFields,
   };
 }

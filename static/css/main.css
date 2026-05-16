@@ -529,6 +529,10 @@ select:focus,
   border-bottom: 1px solid var(--border);
 }
 
+.criterion-preview-row:has(.criterion-failure-fields:not([hidden])) {
+  align-items: start;
+}
+
 .criterion-preview-row:last-child {
   border-bottom: 0;
 }
@@ -595,6 +599,25 @@ select:focus,
   color: #fff;
   background: var(--brand);
   border-color: var(--brand);
+}
+
+.criterion-failure-fields {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  padding: 0.85rem;
+  border: 1px solid #f2b8b5;
+  border-radius: 8px;
+  background: #fff7f6;
+}
+
+.criterion-failure-fields .field-group:last-child {
+  grid-column: 1 / -1;
+}
+
+.criterion-failure-fields[hidden] {
+  display: none;
 }
 
 .field-error,
@@ -881,6 +904,15 @@ select:focus,
   .detail-summary,
   .upload-panel {
     grid-template-columns: 1fr;
+  }
+
+  .criterion-preview-row,
+  .criterion-failure-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .criterion-result-options {
+    justify-content: flex-start;
   }
 }
 
