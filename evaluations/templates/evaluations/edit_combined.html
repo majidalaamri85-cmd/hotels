@@ -1,0 +1,100 @@
+{% extends 'evaluations/base.html' %}
+{% load static %}
+
+{% block content %}
+<section class="form-shell fade-up">
+	<div class="form-heading">
+		<div>
+			<p class="section-kicker mb-1">تعديل البيانات</p>
+			<h2 class="page-title mb-0">{{ hotel.name }}</h2>
+		</div>
+		<a class="btn btn-sm btn-outline-primary-soft" href="{% url 'evaluation_detail' ev.id %}">العودة للتقييم</a>
+	</div>
+
+	<form method="post" class="form-grid" novalidate>
+		{% csrf_token %}
+
+		{% if hotel_form.non_field_errors or eval_form.non_field_errors %}
+			<div class="form-errors field-wide">
+				{{ hotel_form.non_field_errors }}
+				{{ eval_form.non_field_errors }}
+			</div>
+		{% endif %}
+
+		{# ── قسم بيانات الفندق ── #}
+		<div class="field-wide">
+			<p class="section-kicker mb-2">بيانات الفندق</p>
+		</div>
+
+		{% for field in hotel_form %}
+			{% if field.is_hidden %}
+				{{ field }}
+			{% else %}
+				<div class="field-group {% if field.field.widget.input_type == 'textarea' %}field-wide{% endif %}">
+					<label for="{{ field.id_for_label }}">{{ field.label }}</label>
+					{{ field }}
+					{% for error in field.errors %}
+						<div class="field-error">{{ error }}</div>
+					{% endfor %}
+				</div>
+			{% endif %}
+		{% endfor %}
+
+		{# زر تحديد الموقع #}
+		<div class="field-group field-wide location-actions">
+			<label>الموقع المباشر</label>
+			<button id="hotel-location-trigger" class="btn btn-outline-primary-soft" type="button">تحديد الموقع المباشر الآن</button>
+			<div id="hotel-location-status" class="form-help">
+				{% if hotel.latitude and hotel.longitude %}
+					✅ الموقع محفوظ: {{ hotel.latitude }}, {{ hotel.longitude }}
+				{% else %}
+					لم يتم تحديد الموقع بعد.
+				{% endif %}
+			</div>
+		</div>
+
+		{# ── فاصل ── #}
+		<div class="field-wide"><hr class="my-2"></div>
+
+		{# ── قسم بيانات التقييم ── #}
+		<div class="field-wide">
+			<p class="section-kicker mb-2">بيانات التقييم</p>
+		</div>
+
+		{% for field in eval_form %}
+			{% if field.is_hidden %}
+				{{ field }}
+			{% else %}
+				<div class="field-group {% if field.field.widget.input_type == 'textarea' %}field-wide{% endif %}">
+					<label for="{{ field.id_for_label }}">{{ field.label }}</label>
+					{{ field }}
+					{% for error in field.errors %}
+						<div class="field-error">{{ error }}</div>
+					{% endfor %}
+				</div>
+			{% endif %}
+		{% endfor %}
+
+		{# الفريق الزائر #}
+		<div class="field-group field-wide visitor-team-panel">
+			<label class="mb-2">الفريق الزائر</label>
+			<div id="visitor-team-list" class="visitor-team-list">
+				{% for member in team_members %}
+					<div class="visitor-person-row">
+						<input type="text" name="visiting_team_members[]" class="form-control" value="{{ member }}" placeholder="اسم الشخص">
+						<button type="button" class="btn btn-ghost visitor-remove-btn" aria-label="حذف الشخص">حذف</button>
+					</div>
+				{% endfor %}
+			</div>
+			<button id="visitor-add-person" type="button" class="btn btn-outline-primary-soft">إضافة شخص آخر</button>
+		</div>
+
+		<div class="form-actions">
+			<button class="btn btn-primary-soft px-4" type="submit">حفظ التعديلات</button>
+			<a class="btn btn-ghost" href="{% url 'evaluation_detail' ev.id %}">إلغاء</a>
+		</div>
+	</form>
+
+	{{ governorate_wilayat_map|json_script:'governorate-wilayat-data' }}
+</section>
+{% endblock %}

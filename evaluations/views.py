@@ -186,7 +186,7 @@ def hotel_create(request):
 
 
 def hotel_edit(request, pk):
-    """Edit an existing hotel."""
+    """Edit an existing hotel (standalone, not used from dashboard)."""
     hotel = get_object_or_404(Hotel, pk=pk)
     form = HotelForm(request.POST or None, instance=hotel)
     if form.is_valid():
@@ -203,27 +203,36 @@ def hotel_edit(request, pk):
 
 
 def evaluation_edit(request, pk):
-    """Edit basic evaluation info (hotel, date, status, team, notes)."""
-    ev = get_object_or_404(Evaluation, pk=pk)
-    form = EvaluationForm(request.POST or None, instance=ev)
+    """Combined edit page: hotel info + evaluation info in one form."""
+    ev = get_object_or_404(Evaluation.objects.select_related('hotel'), pk=pk)
+    hotel = ev.hotel
+
     team_members = (
         request.POST.getlist('visiting_team_members[]')
         if request.method == 'POST'
-        else ev.visiting_team.splitlines() or ['']
+        else (ev.visiting_team.splitlines() or [''])
     )
-    if form.is_valid():
-        ev = form.save(commit=False)
+
+    hotel_form = HotelForm(request.POST or None, instance=hotel)
+    eval_form = EvaluationForm(request.POST or None, instance=ev)
+
+    if request.method == 'POST' and hotel_form.is_valid() and eval_form.is_valid():
+        hotel_form.save()
+        updated_ev = eval_form.save(commit=False)
         clean_members = parse_visiting_team_members(team_members)
-        ev.visiting_team = '\n'.join(clean_members)
-        ev.save()
+        updated_ev.visiting_team = '\n'.join(clean_members)
+        updated_ev.save()
         safe_cache_delete(get_dashboard_cache_key())
-        messages.success(request, 'تم تحديث بيانات التقييم بنجاح')
+        messages.success(request, 'تم تحديث بيانات الفندق والتقييم بنجاح')
         return redirect('evaluation_detail', pk=ev.pk)
-    return render(request, 'evaluations/form.html', {
-        'form': form,
-        'title': f'تعديل تقييم {ev.hotel.name}',
-        'form_kind': 'evaluation',
+
+    return render(request, 'evaluations/edit_combined.html', {
+        'hotel_form': hotel_form,
+        'eval_form': eval_form,
+        'ev': ev,
+        'hotel': hotel,
         'team_members': team_members if team_members else [''],
+        'governorate_wilayat_map': GOVERNORATE_WILAYAT,
     })
 
 
