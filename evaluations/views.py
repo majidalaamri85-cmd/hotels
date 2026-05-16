@@ -81,7 +81,7 @@ def ensure_criteria_seeded():
 
     try:
         data_path = Path(__file__).resolve().parent / 'hotel_criteria_full.json'
-        data = json.loads(data_path.read_text(encoding='utf-8'))
+        data = json.loads(data_path.read_text(encoding='utf-8-sig'))
 
         for index, row in enumerate(data, start=1):
             section, _ = Section.objects.update_or_create(
