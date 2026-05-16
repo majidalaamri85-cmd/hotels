@@ -1,31 +1,53 @@
 {% extends 'evaluations/base.html' %}
-{% load static %}
+{% load static dict_tools %}
 
 {% block content %}
-<section class="form-shell fade-up">
-	<div class="form-heading">
-		<div>
-			<p class="section-kicker mb-1">تعديل البيانات</p>
-			<h2 class="page-title mb-0">{{ hotel.name }}</h2>
+
+{# ── Header ── #}
+<section class="detail-summary fade-up">
+	<div>
+		<p class="section-kicker mb-1">تعديل شامل للتقييم</p>
+		<h2 class="page-title mb-2">{{ hotel.name }}</h2>
+		<div class="summary-meta">
+			<span>الفئة: <strong>{{ ev.hotel.get_target_stars_display }}</strong></span>
+			<span>تاريخ الزيارة: <strong>{{ ev.visit_date }}</strong></span>
+			<span>الحالة: <strong>{{ ev.get_status_display }}</strong></span>
 		</div>
-		<a class="btn btn-sm btn-outline-primary-soft" href="{% url 'evaluation_detail' ev.id %}">العودة للتقييم</a>
+	</div>
+	<div class="score-card">
+		<span>النتيجة الحالية</span>
+		<strong>{{ ev.score }}%</strong>
+		<small>{{ ev.recommendation|default:"لم تُحسب بعد" }}</small>
+	</div>
+	<div class="detail-actions">
+		<a class="btn btn-outline-primary-soft" href="{% url 'dashboard' %}">الرئيسية</a>
+		<a class="btn btn-light-action" href="{% url 'report_print' ev.id %}" target="_blank" rel="noopener">نسخة طباعة</a>
+	</div>
+</section>
+
+{# ── Stats bar ── #}
+<section class="workflow-summary fade-up fade-delay-1">
+	<div class="workflow-item"><span>إجمالي البنود</span><strong>{{ stats.total|default:0 }}</strong></div>
+	<div class="workflow-item status-ok"><span>مستوفي</span><strong>{{ stats.ok|default:0 }}</strong></div>
+	<div class="workflow-item status-no"><span>غير مستوفي</span><strong>{{ stats.no|default:0 }}</strong></div>
+	<div class="workflow-item status-na"><span>لا ينطبق</span><strong>{{ stats.na|default:0 }}</strong></div>
+	<div class="workflow-item"><span>صور مرفقة</span><strong>{{ stats.image_count|default:0 }}</strong></div>
+</section>
+
+<form method="post" enctype="multipart/form-data" novalidate>
+{% csrf_token %}
+
+{# ── 1. بيانات الفندق ── #}
+<div class="form-shell fade-up mt-3">
+	<div class="form-heading">
+		<p class="section-kicker mb-0">١ — بيانات الفندق</p>
 	</div>
 
-	<form method="post" class="form-grid" novalidate>
-		{% csrf_token %}
+	{% if hotel_form.non_field_errors %}
+		<div class="alert alert-danger">{{ hotel_form.non_field_errors }}</div>
+	{% endif %}
 
-		{% if hotel_form.non_field_errors or eval_form.non_field_errors %}
-			<div class="form-errors field-wide">
-				{{ hotel_form.non_field_errors }}
-				{{ eval_form.non_field_errors }}
-			</div>
-		{% endif %}
-
-		{# ── قسم بيانات الفندق ── #}
-		<div class="field-wide">
-			<p class="section-kicker mb-2">بيانات الفندق</p>
-		</div>
-
+	<div class="form-grid">
 		{% for field in hotel_form %}
 			{% if field.is_hidden %}
 				{{ field }}
@@ -33,34 +55,32 @@
 				<div class="field-group {% if field.field.widget.input_type == 'textarea' %}field-wide{% endif %}">
 					<label for="{{ field.id_for_label }}">{{ field.label }}</label>
 					{{ field }}
-					{% for error in field.errors %}
-						<div class="field-error">{{ error }}</div>
-					{% endfor %}
+					{% for error in field.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
 				</div>
 			{% endif %}
 		{% endfor %}
 
-		{# زر تحديد الموقع #}
 		<div class="field-group field-wide location-actions">
 			<label>الموقع المباشر</label>
 			<button id="hotel-location-trigger" class="btn btn-outline-primary-soft" type="button">تحديد الموقع المباشر الآن</button>
 			<div id="hotel-location-status" class="form-help">
-				{% if hotel.latitude and hotel.longitude %}
-					✅ الموقع محفوظ: {{ hotel.latitude }}, {{ hotel.longitude }}
-				{% else %}
-					لم يتم تحديد الموقع بعد.
-				{% endif %}
+				{% if hotel.latitude and hotel.longitude %}✅ الموقع محفوظ: {{ hotel.latitude }}, {{ hotel.longitude }}{% else %}لم يتم تحديد الموقع بعد.{% endif %}
 			</div>
 		</div>
+	</div>
+</div>
 
-		{# ── فاصل ── #}
-		<div class="field-wide"><hr class="my-2"></div>
+{# ── 2. بيانات التقييم الأساسية ── #}
+<div class="form-shell fade-up mt-3">
+	<div class="form-heading">
+		<p class="section-kicker mb-0">٢ — بيانات التقييم</p>
+	</div>
 
-		{# ── قسم بيانات التقييم ── #}
-		<div class="field-wide">
-			<p class="section-kicker mb-2">بيانات التقييم</p>
-		</div>
+	{% if eval_form.non_field_errors %}
+		<div class="alert alert-danger">{{ eval_form.non_field_errors }}</div>
+	{% endif %}
 
+	<div class="form-grid">
 		{% for field in eval_form %}
 			{% if field.is_hidden %}
 				{{ field }}
@@ -68,14 +88,11 @@
 				<div class="field-group {% if field.field.widget.input_type == 'textarea' %}field-wide{% endif %}">
 					<label for="{{ field.id_for_label }}">{{ field.label }}</label>
 					{{ field }}
-					{% for error in field.errors %}
-						<div class="field-error">{{ error }}</div>
-					{% endfor %}
+					{% for error in field.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
 				</div>
 			{% endif %}
 		{% endfor %}
 
-		{# الفريق الزائر #}
 		<div class="field-group field-wide visitor-team-panel">
 			<label class="mb-2">الفريق الزائر</label>
 			<div id="visitor-team-list" class="visitor-team-list">
@@ -86,15 +103,151 @@
 					</div>
 				{% endfor %}
 			</div>
-			<button id="visitor-add-person" type="button" class="btn btn-outline-primary-soft">إضافة شخص آخر</button>
+			<button id="visitor-add-person" type="button" class="btn btn-outline-primary-soft mt-2">إضافة شخص آخر</button>
 		</div>
+	</div>
+</div>
 
-		<div class="form-actions">
-			<button class="btn btn-primary-soft px-4" type="submit">حفظ التعديلات</button>
-			<a class="btn btn-ghost" href="{% url 'evaluation_detail' ev.id %}">إلغاء</a>
+{# ── 3. الأقسام والبنود ── #}
+<div class="fade-up mt-3">
+	<div class="form-heading px-3 pt-3">
+		<p class="section-kicker mb-0">٣ — الأقسام والبنود</p>
+	</div>
+
+	{% if has_active_criteria %}
+	<div class="accordion evaluation-accordion mt-2" id="acc">
+		{% for s in sections %}
+			<div class="accordion-item">
+				<h2 class="accordion-header">
+					<button class="accordion-button collapsed" type="button"
+						data-bs-toggle="collapse" data-bs-target="#s{{ s.id }}"
+						aria-expanded="false" aria-controls="s{{ s.id }}">
+						<span class="accordion-code">{{ s.code }}</span>
+						<span>{{ s.title }}</span>
+					</button>
+				</h2>
+				<div id="s{{ s.id }}" class="accordion-collapse collapse">
+					<div class="accordion-body">
+						{% for sub in s.subsections.all %}
+							<div class="subsection-title">
+								<span>{{ sub.code }}</span>
+								<h3>{{ sub.title }}</h3>
+							</div>
+							{% for c in sub.criteria.all %}
+								{% with r=responses|get_item:c.id %}
+									{% if r %}
+									<div class="criterion-box {% if r.result == 'NO' %}is-failed{% endif %}">
+										<div class="criterion-title">
+											<span>{{ c.code }}</span>
+											<strong>{{ c.title }}</strong>
+										</div>
+										<div class="row mt-3 g-3">
+											<div class="col-md-3">
+												<label class="form-label small text-muted">حالة البند</label>
+												<select name="result_{{ r.id }}" class="form-select {% if r.result == 'NO' %}border-danger text-danger{% endif %}">
+													<option value="OK" {% if r.result == 'OK' %}selected{% endif %}>مستوفي</option>
+													<option value="NO" {% if r.result == 'NO' %}selected{% endif %}>غير مستوفي</option>
+													<option value="NA" {% if r.result == 'NA' %}selected{% endif %}>لا ينطبق</option>
+												</select>
+											</div>
+											<div class="col-md-3">
+												<label class="form-label small text-muted">إرفاق صور جديدة</label>
+												<input type="file" multiple accept="image/*" name="images_{{ r.id }}" class="form-control">
+											</div>
+											<div class="col-md-6">
+												<label class="form-label small text-muted">الملاحظات</label>
+												<textarea name="note_{{ r.id }}" class="form-control" rows="3" placeholder="أدخل الملاحظات">{{ r.note }}</textarea>
+											</div>
+										</div>
+										<div class="mt-3">
+											<label class="form-label small text-muted">الإجراء التصحيحي</label>
+											<textarea name="action_{{ r.id }}" class="form-control" rows="2" placeholder="أدخل الإجراء التصحيحي">{{ r.corrective_action }}</textarea>
+										</div>
+										{% if r.images.all %}
+											<div class="attached-images mt-3">
+												<p class="small text-muted mb-2">الصور المرفقة — ضع علامة للحذف:</p>
+												<div class="d-flex flex-wrap gap-2">
+													{% for img in r.images.all %}
+														<div class="position-relative">
+															<a href="{{ img.image.url }}" target="_blank" rel="noopener">
+																<img src="{{ img.image.url }}" alt="صورة" class="report-thumb" onerror="this.closest('a').style.display='none'">
+															</a>
+															<label class="img-delete-label">
+																<input type="checkbox" name="delete_img_{{ r.id }}" value="{{ img.id }}"> حذف
+															</label>
+														</div>
+													{% endfor %}
+												</div>
+											</div>
+										{% endif %}
+									</div>
+									{% endif %}
+								{% endwith %}
+							{% endfor %}
+						{% endfor %}
+					</div>
+				</div>
+			</div>
+		{% endfor %}
+	</div>
+	{% else %}
+		<div class="alert alert-warning mx-3">لا توجد بنود مفعلة حالياً.</div>
+	{% endif %}
+</div>
+
+{# ── 4. الصور العامة ── #}
+<div class="form-shell fade-up mt-3">
+	<div class="form-heading">
+		<p class="section-kicker mb-0">٤ — الصور العامة للتقييم</p>
+	</div>
+
+	{% if general_images %}
+		<div class="attached-images mt-2 mb-3">
+			<p class="small text-muted mb-2">الصور الحالية — ضع علامة للحذف:</p>
+			<div class="d-flex flex-wrap gap-2">
+				{% for img in general_images %}
+					<div class="position-relative">
+						<a href="{{ img.image.url }}" target="_blank" rel="noopener">
+							<img src="{{ img.image.url }}" alt="صورة عامة" class="report-thumb report-thumb-lg" onerror="this.closest('a').style.display='none'">
+						</a>
+						<label class="img-delete-label">
+							<input type="checkbox" name="delete_general_img" value="{{ img.id }}"> حذف
+						</label>
+					</div>
+				{% endfor %}
+			</div>
 		</div>
-	</form>
+	{% endif %}
 
-	{{ governorate_wilayat_map|json_script:'governorate-wilayat-data' }}
-</section>
+	<div class="upload-panel">
+		<div>
+			<h3 class="h6 mb-1">رفع صور جديدة</h3>
+			<p class="small text-muted mb-0">يمكن رفع عدة صور مرتبطة بالزيارة.</p>
+		</div>
+		<input type="file" multiple accept="image/*" name="general_images" class="form-control">
+	</div>
+</div>
+
+{# ── زر الحفظ ── #}
+<div class="sticky-save">
+	<button class="btn btn-primary-soft btn-lg" type="submit">حفظ جميع البيانات وإعادة الحساب</button>
+	<a class="btn btn-ghost" href="{% url 'evaluation_detail' ev.id %}">إلغاء</a>
+</div>
+
+</form>
+
+{{ governorate_wilayat_map|json_script:'governorate-wilayat-data' }}
+
+<style>
+.img-delete-label {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	font-size: 0.72rem;
+	color: #dc3545;
+	cursor: pointer;
+	margin-top: 4px;
+}
+</style>
+
 {% endblock %}

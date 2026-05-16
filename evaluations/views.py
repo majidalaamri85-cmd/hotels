@@ -203,9 +203,25 @@ def hotel_edit(request, pk):
 
 
 def evaluation_edit(request, pk):
-    """Combined edit page: hotel info + evaluation info in one form."""
+    """Full edit page: hotel + evaluation metadata + all criteria responses + images."""
     ev = get_object_or_404(Evaluation.objects.select_related('hotel'), pk=pk)
     hotel = ev.hotel
+
+    # Ensure all criteria have corresponding Response rows
+    active_criteria_qs = Criterion.objects.filter(active=True)
+    criteria_qs = active_criteria_qs if active_criteria_qs.exists() else Criterion.objects.all()
+    existing_criterion_ids = set(ev.responses.values_list('criterion_id', flat=True))
+    missing = [
+        Response(
+            evaluation=ev,
+            criterion_id=c['id'],
+            corrective_action=c['corrective_action'],
+        )
+        for c in criteria_qs.values('id', 'corrective_action')
+        if c['id'] not in existing_criterion_ids
+    ]
+    if missing:
+        Response.objects.bulk_create(missing, batch_size=100)
 
     team_members = (
         request.POST.getlist('visiting_team_members[]')
@@ -216,15 +232,70 @@ def evaluation_edit(request, pk):
     hotel_form = HotelForm(request.POST or None, instance=hotel)
     eval_form = EvaluationForm(request.POST or None, instance=ev)
 
-    if request.method == 'POST' and hotel_form.is_valid() and eval_form.is_valid():
-        hotel_form.save()
-        updated_ev = eval_form.save(commit=False)
-        clean_members = parse_visiting_team_members(team_members)
-        updated_ev.visiting_team = '\n'.join(clean_members)
-        updated_ev.save()
+    if request.method == 'POST':
+        forms_valid = hotel_form.is_valid() and eval_form.is_valid()
+        if forms_valid:
+            hotel_form.save()
+            updated_ev = eval_form.save(commit=False)
+            clean_members = parse_visiting_team_members(team_members)
+            updated_ev.visiting_team = '\n'.join(clean_members)
+            updated_ev.save()
+
+        # Save responses (even if hotel/eval forms had issues, save what we can)
+        responses_map = {r.id: r for r in ev.responses.select_related('criterion').prefetch_related('images')}
+        updates = []
+        images_to_create = []
+        images_to_delete = []
+
+        for response_id, response in responses_map.items():
+            response.result = request.POST.get(f'result_{response_id}', response.result)
+            response.note = request.POST.get(f'note_{response_id}', '')
+            response.corrective_action = request.POST.get(f'action_{response_id}', response.corrective_action)
+            updates.append(response)
+            for img in request.FILES.getlist(f'images_{response_id}'):
+                images_to_create.append(ResponseImage(response=response, image=img))
+            # Handle image deletions
+            for img_id in request.POST.getlist(f'delete_img_{response_id}'):
+                images_to_delete.append(img_id)
+
+        if updates:
+            Response.objects.bulk_update(updates, ['result', 'note', 'corrective_action'], batch_size=100)
+        if images_to_create:
+            ResponseImage.objects.bulk_create(images_to_create, batch_size=50)
+        if images_to_delete:
+            ResponseImage.objects.filter(id__in=images_to_delete).delete()
+
+        # General images
+        general_imgs = [
+            EvaluationImage(evaluation=ev, image=img)
+            for img in request.FILES.getlist('general_images')
+        ]
+        if general_imgs:
+            EvaluationImage.objects.bulk_create(general_imgs, batch_size=50)
+        for img_id in request.POST.getlist('delete_general_img'):
+            EvaluationImage.objects.filter(id=img_id, evaluation=ev).delete()
+
+        ev.recalculate()
         safe_cache_delete(get_dashboard_cache_key())
-        messages.success(request, 'تم تحديث بيانات الفندق والتقييم بنجاح')
-        return redirect('evaluation_detail', pk=ev.pk)
+        messages.success(request, 'تم حفظ جميع البيانات والتقييم بنجاح')
+        return redirect('evaluation_edit', pk=ev.pk)
+
+    # Build sections tree with responses
+    responses_qs = ev.responses.select_related('criterion').prefetch_related('images').order_by(
+        'criterion__order', 'criterion_id'
+    )
+    responses = {r.criterion_id: r for r in responses_qs}
+
+    sections = Section.objects.order_by('order').prefetch_related(
+        Prefetch(
+            'subsections',
+            queryset=SubSection.objects.filter(
+                criteria__in=criteria_qs
+            ).distinct().order_by('order').prefetch_related(
+                Prefetch('criteria', queryset=criteria_qs.order_by('order', 'id'))
+            )
+        )
+    ).filter(subsections__criteria__in=criteria_qs).distinct()
 
     return render(request, 'evaluations/edit_combined.html', {
         'hotel_form': hotel_form,
@@ -233,6 +304,11 @@ def evaluation_edit(request, pk):
         'hotel': hotel,
         'team_members': team_members if team_members else [''],
         'governorate_wilayat_map': GOVERNORATE_WILAYAT,
+        'sections': sections,
+        'responses': responses,
+        'general_images': ev.general_images.all().order_by('-uploaded_at'),
+        'stats': get_evaluation_stats(ev),
+        'has_active_criteria': criteria_qs.exists(),
     })
 
 
