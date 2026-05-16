@@ -21,7 +21,11 @@
 	</div>
 	<div class="detail-actions">
 		<a class="btn btn-outline-primary-soft" href="{% url 'dashboard' %}">الرئيسية</a>
-		<a class="btn btn-light-action" href="{% url 'report_print' ev.id %}" target="_blank" rel="noopener">نسخة طباعة</a>
+		{% if ev.hotel.license_no %}
+			<a class="btn btn-light-action" href="{% url 'report_print' ev.hotel.license_no ev.id %}" target="_blank" rel="noopener">نسخة طباعة</a>
+		{% else %}
+			<button class="btn btn-light-action" type="button" disabled title="رقم الترخيص غير متوفر">نسخة طباعة</button>
+		{% endif %}
 	</div>
 </section>
 

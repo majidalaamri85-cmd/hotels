@@ -516,11 +516,12 @@ def evaluation_detail(request, pk):
 
 
 @cache_control(max_age=CACHE_TIMEOUT_MEDIUM, public=True)
-def report_print(request, pk):
-    """Print report view with optimized queries."""
+def report_print(request, license_no, report_no):
+    """Print report by matching hotel license number with report number."""
     ev = get_object_or_404(
         Evaluation.objects.select_related('hotel'),
-        pk=pk
+        pk=report_no,
+        hotel__license_no=license_no,
     )
     all_rows = ev.responses.select_related('criterion').order_by(
         'criterion__order', 'criterion_id'
