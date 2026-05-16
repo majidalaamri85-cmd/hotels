@@ -67,37 +67,33 @@
 				</div>
 
 				{% if has_active_criteria %}
-					<div class="accordion evaluation-accordion criteria-preview-accordion" id="criteriaPreviewAcc">
+					<div class="criteria-preview-accordion" id="criteriaPreviewAcc">
 						{% for s in sections %}
-							<div class="accordion-item">
-								<h2 class="accordion-header">
-									<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#preview-s{{ s.id }}" aria-expanded="false" aria-controls="preview-s{{ s.id }}">
-										<span class="accordion-code">{{ s.code }}</span>
-										<span>{{ s.title }}</span>
-										<span class="criteria-count">{{ s.criteria_count }} بند</span>
-									</button>
-								</h2>
-								<div id="preview-s{{ s.id }}" class="accordion-collapse collapse" data-bs-parent="#criteriaPreviewAcc">
-									<div class="accordion-body">
-										{% for sub in s.subsections.all %}
-											<div class="subsection-title">
-												<span>{{ sub.code }}</span>
-												<h3>{{ sub.title }}</h3>
+							<details class="criteria-section">
+								<summary class="criteria-section-summary">
+									<span class="accordion-code">{{ s.code }}</span>
+									<span>{{ s.title }}</span>
+									<span class="criteria-count">{{ s.criteria_count }} بند</span>
+								</summary>
+								<div class="criteria-section-body">
+									{% for sub in s.subsections.all %}
+										<div class="subsection-title">
+											<span>{{ sub.code }}</span>
+											<h3>{{ sub.title }}</h3>
+										</div>
+										{% for c in sub.criteria.all %}
+											<div class="criterion-preview-row">
+												<span>{{ c.code }}</span>
+												<strong>{{ c.title }}</strong>
 											</div>
-											{% for c in sub.criteria.all %}
-												<div class="criterion-preview-row">
-													<span>{{ c.code }}</span>
-													<strong>{{ c.title }}</strong>
-												</div>
-											{% empty %}
-												<div class="text-muted small py-2">لا توجد بنود مفعلة في هذا القسم الفرعي.</div>
-											{% endfor %}
 										{% empty %}
-											<div class="text-muted small py-2">لا توجد أقسام فرعية ضمن هذا القسم.</div>
+											<div class="text-muted small py-2">لا توجد بنود مفعلة في هذا القسم الفرعي.</div>
 										{% endfor %}
-									</div>
+									{% empty %}
+										<div class="text-muted small py-2">لا توجد أقسام فرعية ضمن هذا القسم.</div>
+									{% endfor %}
 								</div>
-							</div>
+							</details>
 						{% endfor %}
 					</div>
 				{% else %}
