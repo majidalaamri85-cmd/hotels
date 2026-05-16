@@ -5,10 +5,14 @@ from django.views.decorators.cache import cache_control
 from django.views.decorators.http import condition
 from django.utils.decorators import method_decorator
 from django.core.cache import cache
+import logging
 from .models import *
 from .forms import HotelForm, EvaluationForm
 import hashlib
 from datetime import datetime
+
+
+logger = logging.getLogger(__name__)
 
 # Cache timeout constants (in seconds)
 CACHE_TIMEOUT_SHORT = 300  # 5 minutes
@@ -21,28 +25,56 @@ def get_dashboard_cache_key():
     return 'dashboard_data'
 
 
+def safe_cache_get(key, default=None):
+    """Read cache without breaking request flow if cache backend fails."""
+    try:
+        return cache.get(key, default)
+    except Exception:
+        return default
+
+
+def safe_cache_set(key, value, timeout):
+    """Write cache safely; ignore backend failures in production."""
+    try:
+        cache.set(key, value, timeout)
+    except Exception:
+        pass
+
+
+def safe_cache_delete(key):
+    """Delete cache key safely; ignore backend failures in production."""
+    try:
+        cache.delete(key)
+    except Exception:
+        pass
+
+
 @cache_control(max_age=CACHE_TIMEOUT_SHORT, public=True)
 def dashboard(request):
     """
     Dashboard view with optimized queries and caching.
     """
     cache_key = get_dashboard_cache_key()
-    cached_data = cache.get(cache_key)
+    cached_data = safe_cache_get(cache_key)
     
     if cached_data:
         evaluations = cached_data['evaluations']
         criteria_count = cached_data['criteria_count']
     else:
-        evaluations = list(
-            Evaluation.objects.select_related('hotel').order_by('-id')[:20]
-        )
-        criteria_count = Criterion.objects.filter(active=True).count()
-        
-        cached_data = {
-            'evaluations': evaluations,
-            'criteria_count': criteria_count
-        }
-        cache.set(cache_key, cached_data, CACHE_TIMEOUT_SHORT)
+        try:
+            evaluations = list(
+                Evaluation.objects.select_related('hotel').order_by('-id')[:20]
+            )
+            criteria_count = Criterion.objects.filter(active=True).count()
+            cached_data = {
+                'evaluations': evaluations,
+                'criteria_count': criteria_count
+            }
+            safe_cache_set(cache_key, cached_data, CACHE_TIMEOUT_SHORT)
+        except Exception:
+            logger.exception('Failed to load dashboard data')
+            evaluations = []
+            criteria_count = 0
     
     return render(request, 'evaluations/dashboard.html', {
         'evaluations': evaluations,
@@ -56,7 +88,7 @@ def hotel_create(request):
     if form.is_valid():
         form.save()
         # Invalidate dashboard cache
-        cache.delete(get_dashboard_cache_key())
+        safe_cache_delete(get_dashboard_cache_key())
         messages.success(request, 'تم إضافة الفندق بنجاح')
         return redirect('dashboard')
     return render(request, 'evaluations/form.html', {
@@ -89,7 +121,7 @@ def evaluation_create(request):
         Response.objects.bulk_create(responses, batch_size=100)
         
         # Invalidate cache
-        cache.delete(get_dashboard_cache_key())
+        safe_cache_delete(get_dashboard_cache_key())
         messages.success(request, 'تم إنشاء التقييم بنجاح')
         return redirect('evaluation_detail', pk=ev.pk)
     
@@ -150,7 +182,7 @@ def evaluation_detail(request, pk):
         
         # Recalculate score
         ev.recalculate()
-        cache.delete(get_dashboard_cache_key())
+        safe_cache_delete(get_dashboard_cache_key())
         messages.success(request, 'تم حفظ التقييم وحساب النتيجة')
         return redirect('evaluation_detail', pk=pk)
     

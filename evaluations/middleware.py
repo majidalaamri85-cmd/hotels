@@ -7,6 +7,10 @@ from django.utils.deprecation import MiddlewareMixin
 from django.views.decorators.cache import add_never_cache_headers
 import gzip
 from io import BytesIO
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 
 class PerformanceOptimizationMiddleware(MiddlewareMixin):
@@ -18,23 +22,26 @@ class PerformanceOptimizationMiddleware(MiddlewareMixin):
     """
     
     def process_response(self, request, response):
-        # Add cache headers for static resources
-        if self._is_static_resource(request.path):
-            response['Cache-Control'] = 'public, max-age=31536000, immutable'
-            response['Expires'] = self._get_expires_header()
-        
-        # Add cache headers for HTML pages (shorter duration)
-        elif response.get('Content-Type', '').startswith('text/html'):
-            response['Cache-Control'] = 'public, max-age=300'
-        
-        # Remove server version header for security
-        if 'Server' in response:
-            del response['Server']
-        
-        # Enable compression for text-based content
-        if self._should_compress(response):
-            response = self._compress_response(response)
-        
+        try:
+            # Add cache headers for static resources
+            if self._is_static_resource(request.path):
+                response['Cache-Control'] = 'public, max-age=31536000, immutable'
+                response['Expires'] = self._get_expires_header()
+
+            # Add cache headers for HTML pages (shorter duration)
+            elif response.get('Content-Type', '').startswith('text/html'):
+                response['Cache-Control'] = 'public, max-age=300'
+
+            # Remove server version header for security
+            if 'Server' in response:
+                del response['Server']
+
+            # Do not compress streaming responses in custom middleware.
+            if not getattr(response, 'streaming', False) and self._should_compress(response):
+                response = self._compress_response(response)
+        except Exception:
+            logger.exception('Performance middleware failed; returning original response')
+
         return response
     
     @staticmethod
@@ -49,6 +56,9 @@ class PerformanceOptimizationMiddleware(MiddlewareMixin):
     @staticmethod
     def _should_compress(response):
         """Check if response should be compressed"""
+        if getattr(response, 'streaming', False):
+            return False
+
         content_type = response.get('Content-Type', '')
         compressible_types = (
             'text/html', 'text/css', 'application/javascript',
