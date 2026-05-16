@@ -1,10 +1,17 @@
+from django.contrib.auth.models import User
 from django.db import models
 from django.db.models import Count, Q
-from django.contrib.auth.models import User
 
 
 class Hotel(models.Model):
-    STAR_CHOICES = [(1, 'نجمة واحدة'), (2, 'نجمتان'), (3, 'ثلاث نجوم'), (4, 'أربع نجوم'), (5, 'خمس نجوم')]
+    STAR_CHOICES = [
+        (1, 'نجمة واحدة'),
+        (2, 'نجمتان'),
+        (3, 'ثلاث نجوم'),
+        (4, 'أربع نجوم'),
+        (5, 'خمس نجوم'),
+    ]
+
     name = models.CharField(max_length=255, verbose_name='اسم الفندق')
     governorate = models.CharField(max_length=120, blank=True, verbose_name='المحافظة')
     wilayat = models.CharField(max_length=120, blank=True, verbose_name='الولاية')
@@ -69,7 +76,13 @@ class Criterion(models.Model):
         verbose_name_plural = 'المعايير'
 
     def requirement_for(self, stars):
-        return {1: self.one_star, 2: self.two_star, 3: self.three_star, 4: self.four_star, 5: self.five_star}.get(stars, '')
+        return {
+            1: self.one_star,
+            2: self.two_star,
+            3: self.three_star,
+            4: self.four_star,
+            5: self.five_star,
+        }.get(stars, '')
 
     def __str__(self):
         return self.code
@@ -77,6 +90,7 @@ class Criterion(models.Model):
 
 class Evaluation(models.Model):
     STATUS = [('DRAFT', 'مسودة'), ('FINAL', 'معتمد')]
+
     hotel = models.ForeignKey(Hotel, on_delete=models.CASCADE, related_name='evaluations', verbose_name='الفندق')
     evaluator = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, verbose_name='المقيّم')
     visit_date = models.DateField(verbose_name='تاريخ الزيارة')
@@ -109,6 +123,7 @@ class Evaluation(models.Model):
 
 class Response(models.Model):
     RESULT = [('OK', 'مستوفي'), ('NO', 'غير مستوفي'), ('NA', 'لا ينطبق')]
+
     evaluation = models.ForeignKey(Evaluation, on_delete=models.CASCADE, related_name='responses', verbose_name='التقييم')
     criterion = models.ForeignKey(Criterion, on_delete=models.CASCADE, verbose_name='المعيار')
     result = models.CharField(max_length=2, choices=RESULT, default='OK', verbose_name='الحالة')
