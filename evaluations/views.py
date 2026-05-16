@@ -185,6 +185,23 @@ def hotel_create(request):
     })
 
 
+def hotel_edit(request, pk):
+    """Edit an existing hotel."""
+    hotel = get_object_or_404(Hotel, pk=pk)
+    form = HotelForm(request.POST or None, instance=hotel)
+    if form.is_valid():
+        form.save()
+        safe_cache_delete(get_dashboard_cache_key())
+        messages.success(request, 'تم تحديث بيانات الفندق بنجاح')
+        return redirect('dashboard')
+    return render(request, 'evaluations/form.html', {
+        'form': form,
+        'title': f'تعديل بيانات {hotel.name}',
+        'form_kind': 'hotel',
+        'governorate_wilayat_map': GOVERNORATE_WILAYAT,
+    })
+
+
 def evaluation_create(request):
     """Create a new evaluation with optimized query."""
     ensure_criteria_seeded()
