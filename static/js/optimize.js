@@ -145,63 +145,103 @@ function setupHotelLocationLink() {
   const triggerButton = document.getElementById('hotel-location-trigger');
   const locationLink = document.getElementById('hotel-location-link');
   const locationStatus = document.getElementById('hotel-location-status');
+  const pasteInput = document.getElementById('hotel-location-paste');
+  const parseButton = document.getElementById('hotel-location-parse');
   const latitudeField = document.getElementById('id_latitude');
   const longitudeField = document.getElementById('id_longitude');
 
-  if (!triggerButton || !locationLink || !locationStatus || !latitudeField || !longitudeField) {
+  if (!triggerButton || !locationLink || !locationStatus || !pasteInput || !parseButton || !latitudeField || !longitudeField) {
     return;
   }
 
-  function syncLocationLink() {
-    const latitude = latitudeField.value.trim();
-    const longitude = longitudeField.value.trim();
+  // Parse lat/lng from a Google Maps URL or plain "lat, lng" text
+  function parseCoordsFromText(text) {
+    text = text.trim();
 
-    if (!latitude || !longitude) {
-      locationLink.href = '#';
-      locationLink.setAttribute('aria-disabled', 'true');
-      locationLink.classList.add('disabled');
-      locationStatus.textContent = 'لم يتم تحديد الموقع بعد.';
-      return;
+    // Format: /@lat,lng,  or  ?q=lat,lng  or  ll=lat,lng  or  center=lat,lng
+    const urlPattern = /[/@?&](?:q=|ll=|center=)?(-?\d{1,3}\.\d+)[,+](-?\d{1,3}\.\d+)/i;
+    const urlMatch = text.match(urlPattern);
+    if (urlMatch) {
+      return { lat: parseFloat(urlMatch[1]), lng: parseFloat(urlMatch[2]) };
     }
 
-    locationLink.href = `https://www.google.com/maps?q=${encodeURIComponent(latitude)},${encodeURIComponent(longitude)}`;
-    locationLink.setAttribute('aria-disabled', 'false');
-    locationLink.classList.remove('disabled');
-    locationStatus.textContent = 'تم تحديد الموقع بنجاح.';
+    // Format: plain "23.5880, 58.3829" or "23.5880 58.3829"
+    const plainPattern = /^(-?\d{1,3}\.\d+)[,\s]+(-?\d{1,3}\.\d+)$/;
+    const plainMatch = text.match(plainPattern);
+    if (plainMatch) {
+      return { lat: parseFloat(plainMatch[1]), lng: parseFloat(plainMatch[2]) };
+    }
+
+    return null;
   }
 
+  function applyCoords(lat, lng) {
+    latitudeField.value = lat.toFixed(7);
+    longitudeField.value = lng.toFixed(7);
+    locationLink.href = `https://www.google.com/maps?q=${encodeURIComponent(lat)},${encodeURIComponent(lng)}`;
+    locationStatus.textContent = `\u2705 تم تسجيل الموقع: ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+    locationStatus.style.color = 'var(--brand)';
+  }
+
+  // GPS button
   triggerButton.addEventListener('click', () => {
     if (!('geolocation' in navigator)) {
-      locationStatus.textContent = 'المتصفح لا يدعم تحديد الموقع.';
+      locationStatus.textContent = 'المتصفح لا يدعم تحديد الموقع تلقائيًا. استخدم خيار اللصق أدناه.';
       return;
     }
 
     triggerButton.disabled = true;
+    triggerButton.textContent = 'جاري التحديد...';
+    locationStatus.style.color = 'var(--muted)';
     locationStatus.textContent = 'جاري تحديد الموقع...';
 
     navigator.geolocation.getCurrentPosition(
       position => {
-        latitudeField.value = position.coords.latitude.toFixed(7);
-        longitudeField.value = position.coords.longitude.toFixed(7);
         triggerButton.disabled = false;
-        syncLocationLink();
-        window.open(locationLink.href, '_blank', 'noopener');
+        triggerButton.textContent = 'تحديد موقعي تلقائيًا (GPS)';
+        applyCoords(position.coords.latitude, position.coords.longitude);
       },
-      () => {
+      error => {
         triggerButton.disabled = false;
-        locationStatus.textContent = 'تعذر تحديد الموقع. يرجى السماح بالوصول للموقع ثم المحاولة.';
+        triggerButton.textContent = 'تحديد موقعي تلقائيًا (GPS)';
+        const msg = error.code === 1
+          ? 'رُفض الإذن. افتح خرائط Google يدويًا، ثم انسخ الرابط والصقه في الحقل أدناه.'
+          : 'تعذر تحديد الموقع. الصق رابط Google Maps في الحقل أدناه.';
+        locationStatus.textContent = msg;
+        locationStatus.style.color = 'var(--danger)';
       },
-      {
-        enableHighAccuracy: true,
-        timeout: 12000,
-        maximumAge: 0,
-      }
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
     );
   });
 
-  latitudeField.addEventListener('input', syncLocationLink);
-  longitudeField.addEventListener('input', syncLocationLink);
-  syncLocationLink();
+  // Parse-from-link button
+  parseButton.addEventListener('click', () => {
+    const coords = parseCoordsFromText(pasteInput.value);
+    if (!coords) {
+      locationStatus.textContent = 'تعذر قراءة الإحداثيات. تأكد من صحة الرابط أو الصيغة مثال: 23.5880, 58.3829';
+      locationStatus.style.color = 'var(--danger)';
+      return;
+    }
+    applyCoords(coords.lat, coords.lng);
+    pasteInput.value = '';
+  });
+
+  // Also parse on Enter key inside paste input
+  pasteInput.addEventListener('keydown', event => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      parseButton.click();
+    }
+  });
+
+  // If coordinates already saved (edit mode), show status
+  if (latitudeField.value && longitudeField.value) {
+    const lat = parseFloat(latitudeField.value);
+    const lng = parseFloat(longitudeField.value);
+    locationLink.href = `https://www.google.com/maps?q=${encodeURIComponent(lat)},${encodeURIComponent(lng)}`;
+    locationStatus.textContent = `\u2705 الموقع محفوظ: ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+    locationStatus.style.color = 'var(--brand)';
+  }
 }
 
 function setupVisitingTeamFields() {
