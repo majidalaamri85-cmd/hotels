@@ -75,23 +75,22 @@ def safe_cache_delete(key):
 
 
 def ensure_criteria_seeded():
-    """Populate criteria from bundled JSON if database has no criteria."""
-    if Criterion.objects.exists():
-        return False
-
+    """Keep database criteria synchronized with the bundled JSON file."""
     try:
         data_path = Path(__file__).resolve().parent / 'hotel_criteria_full.json'
         data = json.loads(data_path.read_text(encoding='utf-8-sig'))
+        imported_codes = {row['code'] for row in data}
+        changed = False
 
         for index, row in enumerate(data, start=1):
-            section, _ = Section.objects.update_or_create(
+            section, section_created = Section.objects.update_or_create(
                 code=row['section_code'],
                 defaults={
                     'title': row['section_title'],
                     'order': int(row['section_code']) if row['section_code'].isdigit() else index,
                 },
             )
-            subsection, _ = SubSection.objects.update_or_create(
+            subsection, subsection_created = SubSection.objects.update_or_create(
                 code=row['subsection_code'],
                 defaults={
                     'section': section,
@@ -99,7 +98,7 @@ def ensure_criteria_seeded():
                     'order': index,
                 },
             )
-            Criterion.objects.update_or_create(
+            _, criterion_created = Criterion.objects.update_or_create(
                 code=row['code'],
                 defaults={
                     'subsection': subsection,
@@ -114,9 +113,12 @@ def ensure_criteria_seeded():
                     'active': True,
                 },
             )
-        return True
+            changed = changed or section_created or subsection_created or criterion_created
+
+        stale_count = Criterion.objects.exclude(code__in=imported_codes).filter(active=True).update(active=False)
+        return changed or bool(stale_count)
     except Exception:
-        logger.exception('Failed to auto-seed hotel criteria')
+        logger.exception('Failed to synchronize hotel criteria')
         return False
 
 
