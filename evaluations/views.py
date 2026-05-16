@@ -6,6 +6,8 @@ from django.views.decorators.http import condition
 from django.utils.decorators import method_decorator
 from django.core.cache import cache
 import logging
+import json
+from pathlib import Path
 from .models import *
 from .forms import HotelForm, EvaluationForm, GOVERNORATE_WILAYAT
 import hashlib
@@ -53,11 +55,59 @@ def safe_cache_delete(key):
         pass
 
 
+def ensure_criteria_seeded():
+    """Populate criteria from bundled JSON if database has no criteria."""
+    if Criterion.objects.exists():
+        return False
+
+    try:
+        data_path = Path(__file__).resolve().parent / 'hotel_criteria_full.json'
+        data = json.loads(data_path.read_text(encoding='utf-8'))
+
+        for index, row in enumerate(data, start=1):
+            section, _ = Section.objects.update_or_create(
+                code=row['section_code'],
+                defaults={
+                    'title': row['section_title'],
+                    'order': int(row['section_code']) if row['section_code'].isdigit() else index,
+                },
+            )
+            subsection, _ = SubSection.objects.update_or_create(
+                code=row['subsection_code'],
+                defaults={
+                    'section': section,
+                    'title': row['subsection_title'],
+                    'order': index,
+                },
+            )
+            Criterion.objects.update_or_create(
+                code=row['code'],
+                defaults={
+                    'subsection': subsection,
+                    'title': row['title'],
+                    'one_star': row['one_star'],
+                    'two_star': row['two_star'],
+                    'three_star': row['three_star'],
+                    'four_star': row['four_star'],
+                    'five_star': row['five_star'],
+                    'corrective_action': row['corrective_action'],
+                    'order': index,
+                    'active': True,
+                },
+            )
+        return True
+    except Exception:
+        logger.exception('Failed to auto-seed hotel criteria')
+        return False
+
+
 @cache_control(max_age=CACHE_TIMEOUT_SHORT, public=True)
 def dashboard(request):
     """
     Dashboard view with optimized queries and caching.
     """
+    if ensure_criteria_seeded():
+        safe_cache_delete(get_dashboard_cache_key())
     cache_key = get_dashboard_cache_key()
     cached_data = safe_cache_get(cache_key)
     
@@ -105,6 +155,7 @@ def hotel_create(request):
 
 def evaluation_create(request):
     """Create a new evaluation with optimized query."""
+    ensure_criteria_seeded()
     form = EvaluationForm(request.POST or None)
     team_members = request.POST.getlist('visiting_team_members[]') if request.method == 'POST' else ['']
     active_criteria_qs = Criterion.objects.filter(active=True)
@@ -177,6 +228,7 @@ def evaluation_detail(request, pk):
     Evaluation detail view with heavily optimized queries.
     Uses Prefetch for nested queries and select_related.
     """
+    ensure_criteria_seeded()
     ev = get_object_or_404(Evaluation, pk=pk)
 
     # Keep old evaluations in sync with currently active criteria so items don't disappear.
