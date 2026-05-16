@@ -204,10 +204,12 @@ function setupHotelLocationLink() {
       error => {
         triggerButton.disabled = false;
         triggerButton.textContent = 'تحديد موقعي تلقائيًا (GPS)';
-        const msg = error.code === 1
-          ? 'رُفض الإذن. افتح خرائط Google يدويًا، ثم انسخ الرابط والصقه في الحقل أدناه.'
-          : 'تعذر تحديد الموقع. الصق رابط Google Maps في الحقل أدناه.';
-        locationStatus.textContent = msg;
+        if (error.code === 1) {
+          locationStatus.innerHTML = 'رُفض الإذن. يتم فتح خرائط Google تلقائيًا &mdash; انتقل للفندق، انسخ الرابط، ثم الصقه في الحقل أدناه.';
+          window.open('https://maps.google.com', '_blank', 'noopener');
+        } else {
+          locationStatus.textContent = 'تعذر تحديد الموقع. الصق رابط Google Maps في الحقل أدناه.';
+        }
         locationStatus.style.color = 'var(--danger)';
       },
       { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
