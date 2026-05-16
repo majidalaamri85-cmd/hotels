@@ -277,6 +277,37 @@ function setupCriterionFailureFields() {
     });
     syncFields();
   });
+
+  document.querySelectorAll('[data-evaluation-criterion-row]').forEach(row => {
+    const fields = row.querySelector('[data-failure-fields]');
+    const select = row.querySelector('[data-result-select]');
+    if (!fields || !select) {
+      return;
+    }
+
+    const inputs = Array.from(fields.querySelectorAll('input, textarea, select'));
+
+    function syncFields() {
+      const showFields = select.value === 'NO';
+      fields.hidden = !showFields;
+      row.classList.toggle('is-failed', showFields);
+      select.classList.toggle('border-danger', showFields);
+      select.classList.toggle('text-danger', showFields);
+      inputs.forEach(input => {
+        input.disabled = !showFields;
+      });
+
+      if (showFields) {
+        const actionField = fields.querySelector('textarea[name^="action_"]');
+        if (actionField && !actionField.value.trim()) {
+          actionField.value = actionField.dataset.defaultAction || '';
+        }
+      }
+    }
+
+    select.addEventListener('change', syncFields);
+    syncFields();
+  });
 }
 
 if (typeof module !== 'undefined' && module.exports) {

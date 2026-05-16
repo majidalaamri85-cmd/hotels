@@ -26,6 +26,19 @@ def parse_visiting_team_members(values):
     return [member.strip() for member in values if member and member.strip()]
 
 
+def resolve_corrective_action(result, submitted_action, default_action='', previous_action=''):
+    """Use submitted corrective action for failed items, otherwise fallback to defaults."""
+    if result != 'NO':
+        return previous_action
+
+    clean_action = (submitted_action or '').strip()
+    if clean_action:
+        return clean_action
+    if default_action:
+        return default_action
+    return previous_action or ''
+
+
 def get_dashboard_cache_key():
     """Generate cache key for dashboard data"""
     return 'dashboard_data_v2'
@@ -252,7 +265,12 @@ def evaluation_edit(request, pk):
         for response_id, response in responses_map.items():
             response.result = request.POST.get(f'result_{response_id}', response.result)
             response.note = request.POST.get(f'note_{response_id}', '')
-            response.corrective_action = request.POST.get(f'action_{response_id}', response.corrective_action)
+            response.corrective_action = resolve_corrective_action(
+                result=response.result,
+                submitted_action=request.POST.get(f'action_{response_id}'),
+                default_action=response.criterion.corrective_action,
+                previous_action=response.corrective_action,
+            )
             updates.append(response)
             for img in request.FILES.getlist(f'images_{response_id}'):
                 images_to_create.append(ResponseImage(response=response, image=img))
@@ -364,15 +382,17 @@ def evaluation_create(request):
         responses = []
         for c in active_criteria:
             result = request.POST.get(f'criterion_result_{c["id"]}', 'OK')
+            submitted_action = request.POST.get(f'criterion_action_{c["id"]}')
             responses.append(
                 Response(
                     evaluation=ev,
                     criterion_id=c['id'],
                     result=result,
                     note=request.POST.get(f'criterion_note_{c["id"]}', '') if result == 'NO' else '',
-                    corrective_action=request.POST.get(
-                        f'criterion_action_{c["id"]}',
-                        c['corrective_action']
+                    corrective_action=resolve_corrective_action(
+                        result=result,
+                        submitted_action=submitted_action,
+                        default_action=c['corrective_action'],
                     ) if result == 'NO' else c['corrective_action'],
                 )
             )
@@ -462,9 +482,11 @@ def evaluation_detail(request, pk):
         for response_id, response in responses_map.items():
             response.result = request.POST.get(f'result_{response_id}', response.result)
             response.note = request.POST.get(f'note_{response_id}', '')
-            response.corrective_action = request.POST.get(
-                f'action_{response_id}', 
-                response.corrective_action
+            response.corrective_action = resolve_corrective_action(
+                result=response.result,
+                submitted_action=request.POST.get(f'action_{response_id}'),
+                default_action=response.criterion.corrective_action,
+                previous_action=response.corrective_action,
             )
             updates.append(response)
             

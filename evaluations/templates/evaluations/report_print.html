@@ -120,7 +120,7 @@
                                     </span>
                                 </td>
                                 <td>{{ r.note|default:'-' }}</td>
-                                <td>{{ r.corrective_action|default:'-' }}</td>
+                                <td>{% if r.result == 'NO' %}{{ r.corrective_action|default:'-' }}{% else %}-{% endif %}</td>
                                 <td>
                                     {% for img in r.images.all %}
                                         {% if img.image %}

@@ -140,7 +140,7 @@
 							{% for c in sub.criteria.all %}
 								{% with r=responses|get_item:c.id %}
 									{% if r %}
-									<div class="criterion-box {% if r.result == 'NO' %}is-failed{% endif %}">
+									<div class="criterion-box {% if r.result == 'NO' %}is-failed{% endif %}" data-evaluation-criterion-row>
 										<div class="criterion-title">
 											<span>{{ c.code }}</span>
 											<strong>{{ c.title }}</strong>
@@ -148,7 +148,7 @@
 										<div class="row mt-3 g-3">
 											<div class="col-md-3">
 												<label class="form-label small text-muted">حالة البند</label>
-												<select name="result_{{ r.id }}" class="form-select {% if r.result == 'NO' %}border-danger text-danger{% endif %}">
+												<select name="result_{{ r.id }}" class="form-select {% if r.result == 'NO' %}border-danger text-danger{% endif %}" data-result-select>
 													<option value="OK" {% if r.result == 'OK' %}selected{% endif %}>مستوفي</option>
 													<option value="NO" {% if r.result == 'NO' %}selected{% endif %}>غير مستوفي</option>
 													<option value="NA" {% if r.result == 'NA' %}selected{% endif %}>لا ينطبق</option>
@@ -163,9 +163,9 @@
 												<textarea name="note_{{ r.id }}" class="form-control" rows="3" placeholder="أدخل الملاحظات">{{ r.note }}</textarea>
 											</div>
 										</div>
-										<div class="mt-3">
+										<div class="mt-3" data-failure-fields {% if r.result != 'NO' %}hidden{% endif %}>
 											<label class="form-label small text-muted">الإجراء التصحيحي</label>
-											<textarea name="action_{{ r.id }}" class="form-control" rows="2" placeholder="أدخل الإجراء التصحيحي">{{ r.corrective_action }}</textarea>
+											<textarea name="action_{{ r.id }}" class="form-control" rows="2" placeholder="أدخل الإجراء التصحيحي" data-default-action="{{ c.corrective_action|default_if_none:'' }}" {% if r.result != 'NO' %}disabled{% endif %}>{{ r.corrective_action }}</textarea>
 										</div>
 										{% if r.images.all %}
 											<div class="attached-images mt-3">
