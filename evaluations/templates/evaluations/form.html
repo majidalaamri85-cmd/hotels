@@ -83,8 +83,24 @@
 										</div>
 										{% for c in sub.criteria.all %}
 											<div class="criterion-preview-row">
-												<span>{{ c.code }}</span>
-												<strong>{{ c.title }}</strong>
+												<div class="criterion-preview-title">
+													<span>{{ c.code }}</span>
+													<strong>{{ c.title }}</strong>
+												</div>
+												<div class="criterion-result-options" role="group" aria-label="حالة البند {{ c.code }}">
+													<label>
+														<input type="radio" name="criterion_result_{{ c.id }}" value="OK" checked>
+														<span>مستوفي</span>
+													</label>
+													<label>
+														<input type="radio" name="criterion_result_{{ c.id }}" value="NO">
+														<span>غير مستوفي</span>
+													</label>
+													<label>
+														<input type="radio" name="criterion_result_{{ c.id }}" value="NA">
+														<span>لا ينطبق</span>
+													</label>
+												</div>
 											</div>
 										{% empty %}
 											<div class="text-muted small py-2">لا توجد بنود مفعلة في هذا القسم الفرعي.</div>

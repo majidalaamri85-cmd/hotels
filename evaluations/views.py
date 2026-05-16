@@ -200,6 +200,7 @@ def evaluation_create(request):
             Response(
                 evaluation=ev,
                 criterion_id=c['id'],
+                result=request.POST.get(f'criterion_result_{c["id"]}', 'OK'),
                 corrective_action=c['corrective_action']
             )
             for c in active_criteria
