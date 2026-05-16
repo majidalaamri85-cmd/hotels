@@ -107,6 +107,17 @@ def evaluation_create(request):
     """Create a new evaluation with optimized query."""
     form = EvaluationForm(request.POST or None)
     team_members = request.POST.getlist('visiting_team_members[]') if request.method == 'POST' else ['']
+    sections = Section.objects.order_by('order').prefetch_related(
+        Prefetch(
+            'subsections',
+            queryset=SubSection.objects.order_by('order').prefetch_related(
+                Prefetch(
+                    'criteria',
+                    queryset=Criterion.objects.filter(active=True).order_by('order', 'id')
+                )
+            )
+        )
+    )
 
     if form.is_valid():
         ev = form.save(commit=False)
@@ -141,6 +152,8 @@ def evaluation_create(request):
         'title': 'تقييم جديد',
         'form_kind': 'evaluation',
         'team_members': team_members if team_members else [''],
+        'sections': sections,
+        'has_active_criteria': Criterion.objects.filter(active=True).exists(),
     })
 
 
