@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: hotel-tourism-evaluation
+    env: python
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate && python manage.py createcachetable django_cache --noinput && python manage.py seed_hotel_criteria
+    startCommand: gunicorn hotel_project.wsgi:application
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: False
+      - key: PYTHON_VERSION
+        value: 3.12.4
+      - key: DATABASE_URL
+        fromDatabase:
+          name: hotel-tourism-db
+          property: connectionString
+databases:
+  - name: hotel-tourism-db
+    databaseName: hotel_tourism
+    user: hotel_tourism_user

@@ -1,0 +1,43 @@
+{
+  "name": "نظام تقييم الفنادق",
+  "short_name": "التقييمات",
+  "description": "منصة إلكترونية لإدارة تقييمات ومعايير تصنيف الفنادق",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#14532d",
+  "background_color": "#ffffff",
+  "dir": "rtl",
+  "lang": "ar",
+  "screenshots": [
+    {
+      "src": "/static/images/ministry-logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ],
+  "icons": [
+    {
+      "src": "/static/images/ministry-logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/images/ministry-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": ["productivity", "business"],
+  "screenshots": [
+    {
+      "src": "/static/images/ministry-logo.png",
+      "type": "image/png",
+      "sizes": "540x720",
+      "form_factor": "narrow"
+    }
+  ]
+}

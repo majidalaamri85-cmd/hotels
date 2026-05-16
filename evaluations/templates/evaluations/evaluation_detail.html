@@ -1,0 +1,79 @@
+{% extends 'evaluations/base.html' %}
+{% load dict_tools %}
+
+{% block content %}
+<section class="card p-4 mb-3 fade-up">
+	<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+		<div>
+			<h2 class="h4 card-title mb-2">{{ ev.hotel.name }}</h2>
+			<p class="mb-1 text-muted">الفئة المستهدفة: {{ ev.hotel.get_target_stars_display }}</p>
+			<p class="mb-0">النتيجة الحالية: <strong>{{ ev.score }}%</strong> | التوصية: <strong>{{ ev.recommendation }}</strong></p>
+		</div>
+		<div class="d-flex gap-2">
+			<a class="btn btn-outline-primary-soft" href="{% url 'dashboard' %}">العودة للرئيسية</a>
+			<a class="btn btn-outline-primary-soft" href="{% url 'report_print' ev.id %}" target="_blank">نسخة طباعة</a>
+		</div>
+	</div>
+</section>
+
+<form method="post" enctype="multipart/form-data" class="fade-up fade-delay-1">
+	{% csrf_token %}
+	<div class="accordion" id="acc">
+		{% for s in sections %}
+			<div class="accordion-item">
+				<h2 class="accordion-header">
+					<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#s{{ s.id }}">
+						{{ s.code }} - {{ s.title }}
+					</button>
+				</h2>
+				<div id="s{{ s.id }}" class="accordion-collapse collapse" data-bs-parent="#acc">
+					<div class="accordion-body">
+						{% for sub in s.subsections.all %}
+							<h3 class="h6 mt-3 mb-2">{{ sub.code }} - {{ sub.title }}</h3>
+							{% for c in sub.criteria.all %}
+								{% with r=responses|get_item:c.id %}
+									{% if r %}
+										<div class="criterion-box p-3 my-2 {% if r.result == 'NO' %}border border-danger bg-danger-subtle{% endif %}">
+											<strong class="{% if r.result == 'NO' %}text-danger{% endif %}">{{ c.code }} - {{ c.title }}</strong>
+											<div class="row mt-2 g-2">
+												<div class="col-md-3">
+													<label class="form-label small text-muted">حالة البند</label>
+													<select name="result_{{ r.id }}" class="form-select {% if r.result == 'NO' %}border-danger text-danger{% endif %}">
+														<option value="OK" {% if r.result == 'OK' %}selected{% endif %}>مستوفي</option>
+														<option value="NO" {% if r.result == 'NO' %}selected{% endif %}>غير مستوفي</option>
+														<option value="NA" {% if r.result == 'NA' %}selected{% endif %}>لا ينطبق</option>
+													</select>
+												</div>
+												<div class="col-md-3">
+													<label class="form-label small text-muted">إرفاق صور</label>
+													<input type="file" multiple accept="image/*" name="images_{{ r.id }}" class="form-control">
+												</div>
+												<div class="col-md-6">
+													<label class="form-label small text-muted">الملاحظات</label>
+													<textarea name="note_{{ r.id }}" class="form-control" placeholder="أدخل الملاحظات">{{ r.note }}</textarea>
+												</div>
+											</div>
+											<div class="mt-2">
+												<label class="form-label small text-muted">الإجراء التصحيحي</label>
+												<textarea name="action_{{ r.id }}" class="form-control" placeholder="أدخل الإجراء التصحيحي">{{ r.corrective_action }}</textarea>
+											</div>
+										</div>
+									{% endif %}
+								{% endwith %}
+							{% endfor %}
+						{% endfor %}
+					</div>
+				</div>
+			</div>
+		{% endfor %}
+	</div>
+
+	<div class="card p-3 p-md-4 mt-3">
+		<h3 class="h6 mb-2">إرفاق صور عامة للتقييم</h3>
+		<p class="small text-muted mb-2">يمكن رفع عدة صور، وتُحفظ على مستوى التقييم بالكامل.</p>
+		<input type="file" multiple accept="image/*" name="general_images" class="form-control">
+	</div>
+
+	<button class="btn btn-primary-soft btn-lg mt-3" type="submit">حفظ التقييم وحساب النتيجة</button>
+</form>
+{% endblock %}
