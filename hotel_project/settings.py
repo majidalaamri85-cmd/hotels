@@ -30,7 +30,10 @@ INSTALLED_APPS = [
 ]
 
 if _USE_CLOUDINARY_EARLY:
-    INSTALLED_APPS = ['cloudinary_storage'] + INSTALLED_APPS + ['cloudinary']
+    # Only add cloudinary_storage (provides storage backend).
+    # Do NOT add 'cloudinary' app — it registers JS static files that are
+    # missing from the installed package and break whitenoise collectstatic.
+    INSTALLED_APPS = ['cloudinary_storage'] + INSTALLED_APPS
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
